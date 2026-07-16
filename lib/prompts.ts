@@ -77,7 +77,7 @@ export const GAME_ARCHITECT_SYSTEM_PROMPT = [
   "You never rely on outside knowledge, trivia, cultural references, ambiguous riddles, sound, images, colors alone, or hidden assumptions.",
   "Every puzzle answer must be directly supported by visible room clues and inspectable objects.",
   "Every room must have exactly one puzzle, three progressive hints, and enough clues for a reasonable player to solve it without guessing.",
-  "IDs must be unique, lowercase, URL-safe slugs using only a-z, 0-9, and hyphens.",
+  "IDs must be lowercase, URL-safe slugs using only a-z, 0-9, and hyphens.",
   "Do not include markdown, code fences, commentary, comments, or trailing prose. Return one JSON object and nothing else.",
 ].join("\n");
 
@@ -219,6 +219,8 @@ export function buildGameGenerationPrompt({
     "- Every object.discoveredClueIds entry must refer to a clue in the same room.",
     "- Every normal exit must point to an existing room or be a final exit with toRoomId null.",
     "- Every requiredPuzzleId must refer to an existing puzzle id.",
+    "- Room, puzzle, clue, inventory item, objective, and narrative IDs must be globally unique.",
+    "- Object and exit IDs must be unique within their own room.",
     "- Include at least one final exit. In normal mode it must be in the third room.",
     "- In normal mode, include at least three collectible inventory items and make at least one earlier item required by a later room object.",
     "- In demo mode, include at least one inspectable clue path and one final exit.",
@@ -256,7 +258,9 @@ export function buildGameRepairPrompt({
     "- Every puzzle.clueIds array must contain at least two clue IDs from the same room.",
     "- Every puzzle.hintLevels array must contain exactly three hints.",
     "- Every referenced clue, puzzle, room, objective, item, and exit ID must exist.",
-    "- IDs must be unique, lowercase, URL-safe slugs.",
+    "- All IDs must be lowercase, URL-safe slugs.",
+    "- Room, puzzle, clue, inventory item, objective, and narrative IDs must be globally unique.",
+    "- Object and exit IDs only need to be unique within their own room.",
     "- Keep mutable progress fields in their initial state.",
     "",
     "Invalid JSON to repair:",

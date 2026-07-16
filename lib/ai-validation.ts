@@ -55,6 +55,15 @@ export type GameResponseValidationResult =
       issues?: string[];
     };
 
+interface ValidationRegistries {
+  roomIds: Set<string>;
+  puzzleIds: Set<string>;
+  clueIds: Set<string>;
+  collectibleItemIds: Set<string>;
+  objectiveIds: Set<string>;
+  narrativeIds: Set<string>;
+}
+
 export function validateGeneratedGameResponse(
   rawText: string,
   input: GameGenerationPromptInput,
@@ -127,7 +136,6 @@ export function validateGeneratedGame(
     issues.push("Generated progress fields must start empty.");
   }
 
-  const idRegistry = new Set<string>();
   const roomIds = new Set(game.rooms.map((room) => room.id));
   const puzzleIds = new Set(game.rooms.map((room) => room.puzzle.id));
   const collectibleItemIds = new Set(
@@ -137,22 +145,43 @@ export function validateGeneratedGame(
       ),
     ),
   );
+  const registries: ValidationRegistries = {
+    roomIds: new Set(),
+    puzzleIds: new Set(),
+    clueIds: new Set(),
+    collectibleItemIds: new Set(),
+    objectiveIds: new Set(),
+    narrativeIds: new Set(),
+  };
 
-  registerId(idRegistry, issues, game.id, "game");
+  validateIdFormat(issues, game.id, "game");
 
   game.rooms.forEach((room, index) => {
-    validateRoom(room, index, idRegistry, roomIds, puzzleIds, collectibleItemIds, issues);
+    validateRoom(
+      room,
+      index,
+      registries,
+      roomIds,
+      puzzleIds,
+      collectibleItemIds,
+      issues,
+    );
   });
 
   game.objectives.forEach((objective) => {
-    registerId(idRegistry, issues, objective.id, "objective");
+    registerUniqueId(registries.objectiveIds, issues, objective.id, "objective");
     if (objective.completed) {
       issues.push(`Objective ${objective.id} must start incomplete.`);
     }
   });
 
   game.narrativeHistory.forEach((entry) => {
-    registerId(idRegistry, issues, entry.id, "narrative entry");
+    registerUniqueId(
+      registries.narrativeIds,
+      issues,
+      entry.id,
+      "narrative entry",
+    );
   });
 
   const finalExitCount = game.rooms.reduce(
@@ -200,14 +229,22 @@ export function validateGeneratedGame(
 function validateRoom(
   room: Room,
   index: number,
-  idRegistry: Set<string>,
+  registries: ValidationRegistries,
   roomIds: Set<string>,
   puzzleIds: Set<string>,
   collectibleItemIds: Set<string>,
   issues: string[],
 ) {
-  registerId(idRegistry, issues, room.id, `room ${index + 1}`);
-  registerId(idRegistry, issues, room.puzzle.id, `puzzle in ${room.id}`);
+  const roomObjectIds = new Set<string>();
+  const roomExitIds = new Set<string>();
+
+  registerUniqueId(registries.roomIds, issues, room.id, `room ${index + 1}`);
+  registerUniqueId(
+    registries.puzzleIds,
+    issues,
+    room.puzzle.id,
+    `puzzle in ${room.id}`,
+  );
 
   if (room.completed) {
     issues.push(`Room ${room.id} must start incomplete.`);
@@ -227,8 +264,12 @@ function validateRoom(
 
   const clueIds = new Set(room.clues.map((clue) => clue.id));
 
+  if (room.clues.length < 2) {
+    issues.push(`Room ${room.id} must define at least two clues.`);
+  }
+
   room.clues.forEach((clue) => {
-    registerId(idRegistry, issues, clue.id, `clue in ${room.id}`);
+    registerUniqueId(registries.clueIds, issues, clue.id, `clue in ${room.id}`);
   });
 
   room.puzzle.clueIds.forEach((clueId) => {
@@ -238,10 +279,15 @@ function validateRoom(
   });
 
   room.objects.forEach((object) => {
-    registerId(idRegistry, issues, object.id, `object in ${room.id}`);
+    registerUniqueId(roomObjectIds, issues, object.id, `object in ${room.id}`);
 
     if (object.collectibleItemId) {
-      registerId(idRegistry, issues, object.collectibleItemId, `item in ${room.id}`);
+      registerUniqueId(
+        registries.collectibleItemIds,
+        issues,
+        object.collectibleItemId,
+        `item in ${room.id}`,
+      );
     }
 
     if (object.requiredItemId && !collectibleItemIds.has(object.requiredItemId)) {
@@ -256,7 +302,7 @@ function validateRoom(
   });
 
   room.exits.forEach((exit) => {
-    registerId(idRegistry, issues, exit.id, `exit in ${room.id}`);
+    registerUniqueId(roomExitIds, issues, exit.id, `exit in ${room.id}`);
 
     if (!exit.final && (!exit.toRoomId || !roomIds.has(exit.toRoomId))) {
       issues.push(`Exit ${exit.id} must point to an existing room.`);
@@ -268,15 +314,13 @@ function validateRoom(
   });
 }
 
-function registerId(
+function registerUniqueId(
   registry: Set<string>,
   issues: string[],
   id: string,
   label: string,
 ) {
-  if (!isUrlSafeId(id)) {
-    issues.push(`${label} id is not URL-safe: ${id}.`);
-  }
+  validateIdFormat(issues, id, label);
 
   if (registry.has(id)) {
     issues.push(`Duplicate id found: ${id}.`);
@@ -284,6 +328,12 @@ function registerId(
   }
 
   registry.add(id);
+}
+
+function validateIdFormat(issues: string[], id: string, label: string) {
+  if (!isUrlSafeId(id)) {
+    issues.push(`${label} id is not URL-safe: ${id}.`);
+  }
 }
 
 function isUrlSafeId(id: string) {

@@ -369,6 +369,18 @@ function getGenerationErrorMessage(payload: unknown, fallbackMessage?: string) {
   const message = error.message;
 
   return typeof message === "string"
-    ? message
+    ? `${message}${getGenerationIssueText(error)}`
     : fallbackMessage ?? "The AI agents could not generate an adventure.";
+}
+
+function getGenerationIssueText(error: object) {
+  if (!("issues" in error) || !Array.isArray(error.issues)) {
+    return "";
+  }
+
+  const issues = error.issues
+    .filter((issue): issue is string => typeof issue === "string")
+    .slice(0, 3);
+
+  return issues.length > 0 ? ` Issues: ${issues.join(" ")}` : "";
 }
