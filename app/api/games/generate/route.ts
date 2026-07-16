@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { askClaude, hasAnthropicApiKey } from "@/lib/ai/anthropic";
+import { askAi, getConfiguredAiProvider } from "@/lib/ai/provider";
 import {
   gameGenerationPrompt,
   repairGamePrompt,
@@ -22,25 +22,26 @@ export async function POST(request: Request) {
 
   const { theme } = parsed.data;
   const fallback = makeFallbackGeneratedGame(theme);
+  const provider = getConfiguredAiProvider();
 
-  if (!hasAnthropicApiKey()) {
+  if (!provider) {
     return NextResponse.json({
       game: fallback,
       source: "fallback",
       warning:
-        "Claude is not configured locally, so a reliable fallback room was loaded.",
+        "No AI provider is configured locally, so a reliable fallback room was loaded.",
     });
   }
 
   try {
-    const raw = await askClaude(gameGenerationPrompt(theme), 4200);
-    if (!raw) throw new Error("Claude returned no content.");
+    const raw = await askAi(gameGenerationPrompt(theme), 4200);
+    if (!raw) throw new Error("The AI provider returned no content.");
 
     let game = parseGameJson(raw);
     let gameIssue = validateGeneratedGame(game);
 
     if (gameIssue) {
-      const repaired = await askClaude(
+      const repaired = await askAi(
         repairGamePrompt(theme, raw, gameIssue),
         4200,
       );
@@ -55,17 +56,17 @@ export async function POST(request: Request) {
         game: fallback,
         source: "fallback",
         warning:
-          "Claude returned a room that did not pass validation, so a safe fallback was loaded.",
+          "The AI provider returned a room that did not pass validation, so a safe fallback was loaded.",
       });
     }
 
-    return NextResponse.json({ game, source: "claude" });
+    return NextResponse.json({ game, source: provider });
   } catch (error) {
     console.error("Game generation failed", error, summarizeGameForRepair(fallback));
     return NextResponse.json({
       game: fallback,
       source: "fallback",
-      warning: "Claude generation failed, so a safe fallback was loaded.",
+      warning: "AI generation failed, so a safe fallback was loaded.",
     });
   }
 }

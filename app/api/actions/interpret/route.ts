@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { askClaude, hasAnthropicApiKey } from "@/lib/ai/anthropic";
+import { askAi, getConfiguredAiProvider } from "@/lib/ai/provider";
 import { actionInterpretationPrompt } from "@/lib/ai/prompts";
 import { parsePlayerActionText } from "@/lib/game/engine";
 import {
@@ -19,7 +19,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!hasAnthropicApiKey()) {
+  const provider = getConfiguredAiProvider();
+
+  if (!provider) {
     return NextResponse.json({
       intent: parsePlayerActionText(parsed.data.text),
       source: "local",
@@ -27,14 +29,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const raw = await askClaude(actionInterpretationPrompt(parsed.data), 700);
-    if (!raw) throw new Error("Claude returned no action.");
+    const raw = await askAi(actionInterpretationPrompt(parsed.data), 700);
+    if (!raw) throw new Error("The AI provider returned no action.");
 
     const intent = playerActionIntentSchema.parse(
       JSON.parse(extractJsonObject(raw)),
     );
 
-    return NextResponse.json({ intent, source: "claude" });
+    return NextResponse.json({ intent, source: provider });
   } catch (error) {
     console.error("Action interpretation failed", error);
     return NextResponse.json({
