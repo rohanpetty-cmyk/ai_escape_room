@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Emergency control room">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#201916"/>
+      <stop offset=".48" stop-color="#10130f"/>
+      <stop offset="1" stop-color="#101b18"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="56%" cy="46%" r="48%">
+      <stop offset="0" stop-color="#ff8a75" stop-opacity=".27"/>
+      <stop offset=".42" stop-color="#d7ff68" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#0d100d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <rect width="1600" height="1000" fill="url(#glow)"/>
+  <path d="M180 770h1240l-140 140H320z" fill="#090c0a" stroke="#f5f1e8" stroke-opacity=".12" stroke-width="4"/>
+  <rect x="250" y="210" width="360" height="280" rx="18" fill="#080b09" stroke="#61d3c5" stroke-opacity=".25" stroke-width="3"/>
+  <rect x="650" y="155" width="700" height="395" rx="22" fill="#111713" stroke="#f5f1e8" stroke-opacity=".12" stroke-width="3"/>
+  <path d="M700 430c80-120 150-40 230-130s154-50 250 16" fill="none" stroke="#d7ff68" stroke-opacity=".65" stroke-width="8"/>
+  <path d="M720 300h560M720 355h420M720 470h510" stroke="#61d3c5" stroke-opacity=".24" stroke-width="5"/>
+  <g fill="#ff8a75" fill-opacity=".85">
+    <circle cx="350" cy="330" r="18"/>
+    <circle cx="420" cy="330" r="18"/>
+    <circle cx="490" cy="330" r="18"/>
+  </g>
+  <g stroke="#f5f1e8" stroke-opacity=".09" stroke-width="3">
+    <path d="M0 190h1600M0 630h1600M130 0v900M1470 0v900"/>
+  </g>
+</svg>

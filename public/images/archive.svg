@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Cold memory archive shelves">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#101a1a"/>
+      <stop offset=".55" stop-color="#11130f"/>
+      <stop offset="1" stop-color="#1f1b13"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="36%" r="52%">
+      <stop offset="0" stop-color="#61d3c5" stop-opacity=".32"/>
+      <stop offset=".5" stop-color="#d7ff68" stop-opacity=".1"/>
+      <stop offset="1" stop-color="#0d100d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <rect width="1600" height="1000" fill="url(#glow)"/>
+  <g stroke="#f5f1e8" stroke-opacity=".12" stroke-width="3">
+    <path d="M210 160v660M390 130v720M1210 130v720M1390 160v660"/>
+    <path d="M140 250h1320M120 390h1360M130 530h1340M150 670h1300"/>
+  </g>
+  <g fill="#0a0d0b" stroke="#61d3c5" stroke-opacity=".2" stroke-width="2">
+    <rect x="250" y="205" width="116" height="90" rx="8"/>
+    <rect x="430" y="205" width="116" height="90" rx="8"/>
+    <rect x="610" y="205" width="116" height="90" rx="8"/>
+    <rect x="790" y="205" width="116" height="90" rx="8"/>
+    <rect x="970" y="205" width="116" height="90" rx="8"/>
+    <rect x="1150" y="205" width="116" height="90" rx="8"/>
+    <rect x="250" y="435" width="116" height="90" rx="8"/>
+    <rect x="430" y="435" width="116" height="90" rx="8"/>
+    <rect x="610" y="435" width="116" height="90" rx="8"/>
+    <rect x="790" y="435" width="116" height="90" rx="8"/>
+    <rect x="970" y="435" width="116" height="90" rx="8"/>
+    <rect x="1150" y="435" width="116" height="90" rx="8"/>
+  </g>
+  <g fill="#d7ff68" fill-opacity=".8">
+    <circle cx="310" cy="250" r="7"/>
+    <circle cx="490" cy="250" r="7"/>
+    <circle cx="670" cy="250" r="7"/>
+    <circle cx="850" cy="250" r="7"/>
+    <circle cx="1030" cy="250" r="7"/>
+    <circle cx="1210" cy="250" r="7"/>
+  </g>
+  <path d="M0 850h1600v150H0z" fill="#080a08" fill-opacity=".72"/>
+</svg>

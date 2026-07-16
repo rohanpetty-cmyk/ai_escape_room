@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Shadowed research library">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#1b1712"/>
+      <stop offset=".52" stop-color="#10130f"/>
+      <stop offset="1" stop-color="#111b1a"/>
+    </linearGradient>
+    <radialGradient id="desk" cx="50%" cy="48%" r="46%">
+      <stop offset="0" stop-color="#ffd166" stop-opacity=".28"/>
+      <stop offset=".48" stop-color="#61d3c5" stop-opacity=".1"/>
+      <stop offset="1" stop-color="#0d100d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <rect width="1600" height="1000" fill="url(#desk)"/>
+  <g fill="#0a0d0b" stroke="#f5f1e8" stroke-opacity=".12" stroke-width="3">
+    <rect x="130" y="150" width="320" height="620" rx="16"/>
+    <rect x="1150" y="150" width="320" height="620" rx="16"/>
+  </g>
+  <g stroke="#d7ff68" stroke-opacity=".18" stroke-width="5">
+    <path d="M170 260h240M170 365h240M170 470h240M170 575h240M170 680h240"/>
+    <path d="M1190 260h240M1190 365h240M1190 470h240M1190 575h240M1190 680h240"/>
+  </g>
+  <rect x="535" y="350" width="530" height="300" rx="18" fill="#080a08" stroke="#ffd166" stroke-opacity=".24" stroke-width="4"/>
+  <path d="M620 455h360M620 515h260M620 575h315" stroke="#f5f1e8" stroke-opacity=".18" stroke-width="8"/>
+  <path d="M0 800h1600v200H0z" fill="#080a08" fill-opacity=".76"/>
+</svg>

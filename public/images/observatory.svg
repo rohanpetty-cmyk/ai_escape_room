@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Night observatory chamber">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#141d24"/>
+      <stop offset=".6" stop-color="#10130f"/>
+      <stop offset="1" stop-color="#17140f"/>
+    </linearGradient>
+    <radialGradient id="moon" cx="53%" cy="25%" r="28%">
+      <stop offset="0" stop-color="#f5f1e8" stop-opacity=".32"/>
+      <stop offset=".45" stop-color="#61d3c5" stop-opacity=".14"/>
+      <stop offset="1" stop-color="#0d100d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <rect width="1600" height="1000" fill="url(#moon)"/>
+  <circle cx="850" cy="260" r="115" fill="#f5f1e8" fill-opacity=".1" stroke="#f5f1e8" stroke-opacity=".28" stroke-width="5"/>
+  <path d="M250 780c110-250 270-380 550-390s450 130 550 390" fill="none" stroke="#f5f1e8" stroke-opacity=".12" stroke-width="8"/>
+  <path d="M800 390v420M480 580l640 0M585 475l430 250M1015 475 585 725" stroke="#61d3c5" stroke-opacity=".18" stroke-width="4"/>
+  <g fill="#d7ff68" fill-opacity=".75">
+    <circle cx="410" cy="210" r="5"/>
+    <circle cx="1180" cy="185" r="4"/>
+    <circle cx="1320" cy="310" r="6"/>
+    <circle cx="280" cy="360" r="4"/>
+    <circle cx="1020" cy="120" r="5"/>
+  </g>
+  <path d="M0 820h1600v180H0z" fill="#080a08" fill-opacity=".76"/>
+</svg>
