@@ -88,6 +88,14 @@ export function AdventureSetup() {
         throw new Error(getGenerationErrorMessage(payload));
       }
 
+      if (isFallbackGeneration(payload)) {
+        throw new Error(
+          `${getGenerationErrorMessage(
+            payload,
+          )} The static sample was not started automatically.`,
+        );
+      }
+
       const game = getGameFromPayload(payload);
       startGeneratedGame(game);
       window.location.href = "/game";
@@ -338,20 +346,29 @@ function getGameFromPayload(payload: unknown) {
   return parsed.data;
 }
 
-function getGenerationErrorMessage(payload: unknown) {
+function isFallbackGeneration(payload: unknown) {
+  return (
+    payload !== null &&
+    typeof payload === "object" &&
+    "fallback" in payload &&
+    payload.fallback === true
+  );
+}
+
+function getGenerationErrorMessage(payload: unknown, fallbackMessage?: string) {
   if (!payload || typeof payload !== "object" || !("error" in payload)) {
-    return "The AI agents could not generate an adventure.";
+    return fallbackMessage ?? "The AI agents could not generate an adventure.";
   }
 
   const error = payload.error;
 
   if (!error || typeof error !== "object" || !("message" in error)) {
-    return "The AI agents could not generate an adventure.";
+    return fallbackMessage ?? "The AI agents could not generate an adventure.";
   }
 
   const message = error.message;
 
   return typeof message === "string"
     ? message
-    : "The AI agents could not generate an adventure.";
+    : fallbackMessage ?? "The AI agents could not generate an adventure.";
 }

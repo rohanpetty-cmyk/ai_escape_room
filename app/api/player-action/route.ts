@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   processPlayerActionWithProvider,
-  resolveAIProvider,
+  resolveConfiguredAIProvider,
   type ProviderActionFailure,
 } from "@/lib/ai-provider";
 import {
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   }
 
   const { action, gameState } = parsed.data;
-  const provider = resolveAIProvider(parsed.data.provider);
+  const provider = resolveConfiguredAIProvider(parsed.data.provider);
 
   try {
     getCurrentRoom(gameState);

@@ -63,6 +63,23 @@ export function resolveAIProvider(provider?: AIProvider | null): AIProvider {
   return provider ?? getDefaultAIProvider();
 }
 
+export function resolveConfiguredAIProvider(
+  provider?: AIProvider | null,
+): AIProvider {
+  const preferredProvider = resolveAIProvider(provider);
+
+  if (getProviderStatus(preferredProvider).configured) {
+    return preferredProvider;
+  }
+
+  const alternateProvider =
+    preferredProvider === "openai" ? "claude" : "openai";
+
+  return getProviderStatus(alternateProvider).configured
+    ? alternateProvider
+    : preferredProvider;
+}
+
 export function getProviderStatus(provider: AIProvider): ProviderStatus {
   const status =
     provider === "openai" ? getOpenAIStatus() : getClaudeStatus();

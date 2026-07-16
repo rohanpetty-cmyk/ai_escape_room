@@ -1,7 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ContentBlock } from "@anthropic-ai/sdk/resources/messages";
 import {
-  AI_REQUEST_TIMEOUT_MS,
+  AI_ACTION_TIMEOUT_MS,
+  AI_GENERATION_TIMEOUT_MS,
   parseJson,
   stripMarkdownCodeFences,
   temperatureForDifficulty,
@@ -108,7 +109,7 @@ export async function generateGameWithClaude(
   const client = new Anthropic({
     apiKey,
     maxRetries: 0,
-    timeout: AI_REQUEST_TIMEOUT_MS,
+    timeout: AI_GENERATION_TIMEOUT_MS,
   });
 
   let rawText: string;
@@ -172,7 +173,7 @@ export async function processPlayerActionWithClaude(
   const client = new Anthropic({
     apiKey,
     maxRetries: 0,
-    timeout: AI_REQUEST_TIMEOUT_MS,
+    timeout: AI_ACTION_TIMEOUT_MS,
   });
 
   let rawText: string;
@@ -192,7 +193,7 @@ export async function processPlayerActionWithClaude(
         ],
       },
       {
-        timeout: AI_REQUEST_TIMEOUT_MS,
+        timeout: AI_ACTION_TIMEOUT_MS,
       },
     );
 
@@ -310,7 +311,7 @@ async function requestGameTextFromClaude(
       ],
     },
     {
-      timeout: AI_REQUEST_TIMEOUT_MS,
+      timeout: AI_GENERATION_TIMEOUT_MS,
     },
   );
 

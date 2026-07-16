@@ -2,7 +2,8 @@ import type { GameGenerationPromptInput } from "./prompts";
 import { gameStateSchema } from "./schemas";
 import type { GameState, Room } from "./types";
 
-export const AI_REQUEST_TIMEOUT_MS = 20_000;
+export const AI_ACTION_TIMEOUT_MS = 20_000;
+export const AI_GENERATION_TIMEOUT_MS = 60_000;
 
 export function stripMarkdownCodeFences(value: string): string {
   const trimmed = value.trim();

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   generateGameWithProvider,
   getProviderStatus,
-  resolveAIProvider,
+  resolveConfiguredAIProvider,
   type ProviderGenerationFailure,
 } from "@/lib/ai-provider";
 import { demoGame, sampleGame } from "@/lib/sample-game";
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const provider = resolveAIProvider(parsed.data.provider);
+  const provider = resolveConfiguredAIProvider(parsed.data.provider);
   const result = await generateGameWithProvider(provider, parsed.data);
 
   if (result.ok) {
