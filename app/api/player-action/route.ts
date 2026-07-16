@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import {
-  processPlayerActionWithClaude,
-  type ClaudeActionFailure,
-} from "@/lib/claude";
+  processPlayerActionWithProvider,
+  resolveAIProvider,
+  type ProviderActionFailure,
+} from "@/lib/ai-provider";
 import {
   applyEffects,
   canMoveToRoom,
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
   }
 
   const { action, gameState } = parsed.data;
+  const provider = resolveAIProvider(parsed.data.provider);
 
   try {
     getCurrentRoom(gameState);
@@ -73,16 +75,16 @@ export async function POST(request: Request) {
   }
 
   const context = buildDungeonMasterContext(gameState, action);
-  const claudeResult = await processPlayerActionWithClaude(context);
+  const providerResult = await processPlayerActionWithProvider(provider, context);
 
-  if (!claudeResult.ok) {
-    if (claudeResult.code === "MISSING_API_KEY") {
-      return deterministicFallback(gameState, action, claudeResult);
+  if (!providerResult.ok) {
+    if (providerResult.code === "MISSING_API_KEY") {
+      return deterministicFallback(gameState, action, providerResult);
     }
 
     return NextResponse.json(
       {
-        error: publicActionError(claudeResult),
+        error: publicActionError(providerResult),
         gameState,
       },
       { status: MODEL_RESPONSE_ERROR_STATUS },
@@ -93,7 +95,7 @@ export async function POST(request: Request) {
     gameState,
     action,
     context,
-    claudeResult.result,
+    providerResult.result,
   );
 
   if (!sanitized.ok) {
@@ -102,7 +104,7 @@ export async function POST(request: Request) {
         error: {
           code: "MODEL_RESPONSE_REJECTED",
           message:
-            "Claude returned an action response that referenced unavailable game IDs or unsafe effects. The current game state was preserved.",
+            "The selected AI provider returned an action response that referenced unavailable game IDs or unsafe effects. The current game state was preserved.",
           issues: sanitized.issues.slice(0, 8),
         },
         gameState,
@@ -112,7 +114,8 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({
-    source: "claude",
+    source: providerResult.provider,
+    provider: providerResult.provider,
     result: sanitized.result,
     gameState: applyActionResult(gameState, sanitized.result),
   });
@@ -121,12 +124,13 @@ export async function POST(request: Request) {
 function deterministicFallback(
   gameState: GameState,
   action: string,
-  failure: ClaudeActionFailure,
+  failure: ProviderActionFailure,
 ) {
   const result = runCommand(gameState, action);
 
   return NextResponse.json({
     source: "deterministic-fallback",
+    provider: failure.provider,
     result,
     gameState: applyActionResult(gameState, result),
     warning: {
@@ -516,7 +520,7 @@ function makeNarrativeEffect(
   };
 }
 
-function publicActionError(result: ClaudeActionFailure) {
+function publicActionError(result: ProviderActionFailure) {
   return {
     code: result.code,
     message: result.message,

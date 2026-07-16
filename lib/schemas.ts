@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type {
+  AIProvider,
   Clue,
   GameEffect,
   GameState,
@@ -14,6 +15,8 @@ import type {
 } from "./types";
 
 export const gameStatusSchema = z.enum(["not_started", "playing", "escaped"]);
+
+export const aiProviderSchema = z.enum(["claude", "openai"]) satisfies z.ZodType<AIProvider>;
 
 export const playerActionIntentSchema = z.enum([
   "LOOK",
@@ -181,10 +184,12 @@ export const playerActionSchema = z.object({
 export const playerActionRequestSchema = z.object({
   action: z.string().trim().min(1).max(180),
   gameState: gameStateSchema,
+  provider: aiProviderSchema.optional(),
 });
 
 export const playerActionResponseSchema = z.object({
-  source: z.enum(["claude", "deterministic-fallback"]),
+  source: z.enum(["claude", "openai", "deterministic-fallback"]),
+  provider: aiProviderSchema.optional(),
   result: playerActionResultSchema,
   gameState: gameStateSchema,
   warning: z
@@ -210,6 +215,7 @@ export type RoomExitInput = z.infer<typeof roomExitSchema>;
 export type RoomInput = z.infer<typeof roomSchema>;
 export type GameStateInput = z.infer<typeof gameStateSchema>;
 export type GameEffectInput = z.infer<typeof gameEffectSchema>;
+export type AIProviderInput = z.infer<typeof aiProviderSchema>;
 export type PlayerActionResultInput = z.infer<typeof playerActionResultSchema>;
 export type PlayerActionInput = z.infer<typeof playerActionSchema>;
 export type PlayerActionRequestInput = z.infer<typeof playerActionRequestSchema>;

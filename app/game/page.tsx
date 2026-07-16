@@ -18,7 +18,9 @@ import {
 import { useAdventureStore } from "@/state/adventureStore";
 
 export default function GamePage() {
+  const aiProvider = useAdventureStore((state) => state.aiProvider);
   const game = useAdventureStore((state) => state.game);
+  const setAIProvider = useAdventureStore((state) => state.setAIProvider);
   const resetGame = useAdventureStore((state) => state.resetGame);
   const startSampleGame = useAdventureStore((state) => state.startSampleGame);
   const startDemoGame = useAdventureStore((state) => state.startDemoGame);
@@ -86,6 +88,8 @@ export default function GamePage() {
           currentRoomName={room.name}
           solvedCount={game.solvedPuzzleIds.length}
           totalRooms={game.rooms.length}
+          provider={aiProvider}
+          onProviderChange={setAIProvider}
           onReset={resetGame}
         />
 

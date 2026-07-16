@@ -22,27 +22,32 @@ fallback.
 
 ## Claude Setup
 
-Game generation and Dungeon Master action interpretation can call Claude from
-server-side API routes. Keep these values in your local environment, not in
-client code:
+Game generation and Dungeon Master action interpretation can call Claude or
+OpenAI from server-side API routes. Keep these values in your local environment,
+not in client code:
 
 ```bash
+AI_PROVIDER=claude # or openai
 ANTHROPIC_API_KEY=your_claude_key
 CLAUDE_MODEL=claude-sonnet-4-5-20250929
+OPENAI_API_KEY=your_openai_key
+OPENAI_MODEL=gpt-4.1-mini
 ```
 
-If Claude is not configured, game generation returns the static sample or demo
-game as a fallback and player actions use deterministic local action handling.
-Malformed Claude action responses are rejected so the current game state is
-preserved.
+The in-game provider selector lets you switch between Claude and OpenAI for
+Dungeon Master actions. If the selected provider is not configured, game
+generation returns the static sample or demo game as a fallback and player
+actions use deterministic local action handling. Malformed AI action responses
+are rejected so the current game state is preserved.
 
 ## Architecture
 
 - `lib/game-engine.ts` owns deterministic state changes.
 - `lib/sample-game.ts` provides the static playable escape room.
 - `lib/schemas.ts` defines Zod contracts for AI-generated JSON.
-- `lib/claude.ts` calls Claude, parses JSON, and validates generated games and
-  Dungeon Master action responses.
+- `lib/ai-provider.ts` selects the active AI provider.
+- `lib/claude.ts` and `lib/openai.ts` call provider SDKs, parse JSON, and
+  validate generated games and Dungeon Master action responses.
 - `app/api/generate-game/route.ts` validates generation requests and returns
   Claude output or a static fallback.
 - `app/api/player-action/route.ts` sends minimal room context to Claude and

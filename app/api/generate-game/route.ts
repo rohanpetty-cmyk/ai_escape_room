@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import {
-  generateGameWithClaude,
-  getClaudeStatus,
-  type ClaudeGenerationFailure,
-} from "@/lib/claude";
+  generateGameWithProvider,
+  getProviderStatus,
+  resolveAIProvider,
+  type ProviderGenerationFailure,
+} from "@/lib/ai-provider";
 import { demoGame, sampleGame } from "@/lib/sample-game";
+import { aiProviderSchema } from "@/lib/schemas";
 import { z } from "zod";
 
 const requestSchema = z.object({
   theme: z.string().trim().min(3).max(120),
   difficulty: z.enum(["easy", "medium", "hard"]),
   demoMode: z.boolean(),
+  provider: aiProviderSchema.optional(),
 });
 
 export async function POST(request: Request) {
@@ -30,16 +33,19 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await generateGameWithClaude(parsed.data);
+  const provider = resolveAIProvider(parsed.data.provider);
+  const result = await generateGameWithProvider(provider, parsed.data);
 
   if (result.ok) {
     return NextResponse.json({
       game: result.game,
-      source: "claude",
+      source: result.provider,
+      provider: result.provider,
       fallback: false,
-      claude: {
+      ai: {
         configured: true,
         model: result.model,
+        provider: result.provider,
       },
     });
   }
@@ -49,13 +55,14 @@ export async function POST(request: Request) {
   return NextResponse.json({
     game: fallbackGame,
     source: "fallback",
+    provider: result.provider,
     fallback: true,
     error: publicGenerationError(result),
-    claude: getClaudeStatus(),
+    ai: getProviderStatus(result.provider),
   });
 }
 
-function publicGenerationError(result: ClaudeGenerationFailure) {
+function publicGenerationError(result: ProviderGenerationFailure) {
   return {
     code: result.code,
     message: result.message,

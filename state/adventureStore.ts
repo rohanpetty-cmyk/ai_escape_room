@@ -15,11 +15,13 @@ import {
 } from "@/lib/game-engine";
 import { playerActionResponseSchema } from "@/lib/schemas";
 import { demoGame, sampleGame } from "@/lib/sample-game";
-import type { GameState, PlayerActionResult } from "@/lib/types";
+import type { AIProvider, GameState, PlayerActionResult } from "@/lib/types";
 
 interface AdventureStore {
+  aiProvider: AIProvider;
   game: GameState;
   lastResult?: PlayerActionResult;
+  setAIProvider: (provider: AIProvider) => void;
   startSampleGame: () => void;
   startDemoGame: () => void;
   resetGame: () => void;
@@ -36,8 +38,10 @@ const fallbackStorage: StateStorage = {
 export const useAdventureStore = create<AdventureStore>()(
   persist(
     (set, get) => ({
+      aiProvider: "claude",
       game: createInitialGame(sampleGame),
       lastResult: undefined,
+      setAIProvider: (provider) => set({ aiProvider: provider }),
       startSampleGame: () =>
         set({
           game: createInitialGame(sampleGame),
@@ -54,7 +58,7 @@ export const useAdventureStore = create<AdventureStore>()(
           lastResult: undefined,
         })),
       submitCommand: async (command) => {
-        const { game } = get();
+        const { aiProvider, game } = get();
         const response = await fetch("/api/player-action", {
           method: "POST",
           headers: {
@@ -63,6 +67,7 @@ export const useAdventureStore = create<AdventureStore>()(
           body: JSON.stringify({
             action: command,
             gameState: game,
+            provider: aiProvider,
           }),
         });
 

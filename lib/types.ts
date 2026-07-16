@@ -1,5 +1,7 @@
 export type GameStatus = "not_started" | "playing" | "escaped";
 
+export type AIProvider = "claude" | "openai";
+
 export type PlayerActionIntent =
   | "LOOK"
   | "INSPECT"

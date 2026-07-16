@@ -15,7 +15,7 @@ export function AdventureSetup() {
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
             Enter a cinematic lab escape built from deterministic rules, fair
-            clues, and an optional Claude-powered Dungeon Master when configured.
+            clues, and an optional AI-powered Dungeon Master when configured.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
