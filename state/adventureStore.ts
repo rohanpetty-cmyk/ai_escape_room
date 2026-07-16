@@ -7,7 +7,7 @@ import {
   type StateStorage,
 } from "zustand/middleware";
 import {
-  applyGameEffects,
+  applyEffects,
   createInitialGame,
   getCurrentRoom,
   requestHint,
@@ -64,7 +64,7 @@ export const useAdventureStore = create<AdventureStore>()(
             : game;
 
         set({
-          game: applyGameEffects(hintedGame, actionResult.effects),
+          game: applyEffects(hintedGame, actionResult.effects),
           lastResult: actionResult,
         });
 
@@ -79,7 +79,7 @@ export const useAdventureStore = create<AdventureStore>()(
           : game;
 
         set({
-          game: applyGameEffects(hintedGame, actionResult.effects),
+          game: applyEffects(hintedGame, actionResult.effects),
           lastResult: actionResult,
         });
 

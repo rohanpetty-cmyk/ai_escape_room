@@ -6,8 +6,15 @@ import type {
   PlayerActionIntent,
   PlayerActionResult,
   Room,
+  RoomExit,
   RoomObject,
+  Puzzle,
 } from "./types";
+
+export interface EffectValidationResult {
+  valid: boolean;
+  reason?: string;
+}
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -25,15 +32,15 @@ function makeNarrative(
   };
 }
 
-function normalize(value: string) {
+function normalizeText(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
 function textMatches(input: string, candidates: string[]) {
-  const normalizedInput = normalize(input);
+  const normalizedInput = normalizeText(input);
 
   return candidates.some((candidate) => {
-    const normalizedCandidate = normalize(candidate);
+    const normalizedCandidate = normalizeText(candidate);
     return (
       normalizedInput === normalizedCandidate ||
       normalizedInput.includes(normalizedCandidate) ||
@@ -44,6 +51,20 @@ function textMatches(input: string, candidates: string[]) {
 
 function objectiveIdForRoom(roomId: string) {
   return `objective-${roomId}`;
+}
+
+function valid(): EffectValidationResult {
+  return { valid: true };
+}
+
+function invalid(reason: string): EffectValidationResult {
+  return { valid: false, reason };
+}
+
+function logRejectedEffect(effect: GameEffect, reason: string) {
+  if (process.env.NODE_ENV === "development") {
+    console.warn("[game-engine] rejected effect", { effect, reason });
+  }
 }
 
 export function createInitialGame(game: GameState): GameState {
@@ -81,7 +102,7 @@ export function createInitialGame(game: GameState): GameState {
   };
 }
 
-export function getCurrentRoom(game: GameState) {
+export function getCurrentRoom(game: GameState): Room {
   const room = game.rooms.find((candidate) => candidate.id === game.currentRoomId);
 
   if (!room) {
@@ -91,17 +112,286 @@ export function getCurrentRoom(game: GameState) {
   return room;
 }
 
-export function getInventory(game: GameState) {
+export function getVisibleObjects(roomOrGame: Room | GameState): RoomObject[] {
+  const room = "rooms" in roomOrGame ? getCurrentRoom(roomOrGame) : roomOrGame;
+  return room.objects.filter((object) => object.visible);
+}
+
+export function availableObjects(room: Room): RoomObject[] {
+  return getVisibleObjects(room);
+}
+
+export function getInventory(game: GameState): InventoryItem[] {
   return game.inventory;
 }
 
-export function isPuzzleSolved(room: Room, game: GameState) {
+export function isPuzzleSolved(room: Room, game: GameState): boolean {
   return room.puzzle.solved || game.solvedPuzzleIds.includes(room.puzzle.id);
 }
 
-export function availableObjects(room: Room) {
-  return room.objects.filter((object) => object.visible);
+export function normalizeAnswer(answer: string): string {
+  return answer.trim().toLowerCase();
 }
+
+export function isPuzzleAnswerCorrect(puzzle: Puzzle, answer: string): boolean {
+  const normalizedAnswer = normalizeAnswer(answer);
+  const acceptedAnswers = [puzzle.solution, ...puzzle.acceptedAnswers];
+
+  return acceptedAnswers.some(
+    (acceptedAnswer) => normalizeAnswer(acceptedAnswer) === normalizedAnswer,
+  );
+}
+
+export function addInventoryItem(
+  game: GameState,
+  item: InventoryItem,
+): GameState {
+  if (game.inventory.some((candidate) => candidate.id === item.id)) {
+    return game;
+  }
+
+  return {
+    ...game,
+    inventory: [...game.inventory, { ...item }],
+  };
+}
+
+export function discoverClue(game: GameState, clueId: string): GameState {
+  if (game.discoveredClueIds.includes(clueId)) {
+    return game;
+  }
+
+  return {
+    ...game,
+    discoveredClueIds: [...game.discoveredClueIds, clueId],
+  };
+}
+
+export function solvePuzzle(
+  game: GameState,
+  puzzleId: string,
+  roomId?: string,
+): GameState {
+  const room = roomId
+    ? game.rooms.find(
+        (candidate) =>
+          candidate.id === roomId && candidate.puzzle.id === puzzleId,
+      )
+    : game.rooms.find((candidate) => candidate.puzzle.id === puzzleId);
+
+  if (!room || room.puzzle.solved || game.solvedPuzzleIds.includes(puzzleId)) {
+    return game;
+  }
+
+  return {
+    ...game,
+    solvedPuzzleIds: [...game.solvedPuzzleIds, puzzleId],
+    rooms: game.rooms.map((candidate) =>
+      candidate.id === room.id
+        ? {
+            ...candidate,
+            completed: true,
+            puzzle: {
+              ...candidate.puzzle,
+              solved: true,
+            },
+          }
+        : candidate,
+    ),
+  };
+}
+
+export function moveToRoom(game: GameState, roomId: string): GameState {
+  if (!game.rooms.some((room) => room.id === roomId)) {
+    return game;
+  }
+
+  return {
+    ...game,
+    currentRoomId: roomId,
+  };
+}
+
+export function completeObjective(
+  game: GameState,
+  objectiveId: string,
+): GameState {
+  const objective = game.objectives.find(
+    (candidate) => candidate.id === objectiveId,
+  );
+
+  if (!objective || objective.completed) {
+    return game;
+  }
+
+  return {
+    ...game,
+    objectives: game.objectives.map((candidate) =>
+      candidate.id === objectiveId
+        ? { ...candidate, completed: true }
+        : candidate,
+    ),
+  };
+}
+
+export function addNarrativeEntry(
+  game: GameState,
+  entry: NarrativeEntry,
+): GameState {
+  return {
+    ...game,
+    narrativeHistory: [...game.narrativeHistory, { ...entry }].slice(-40),
+  };
+}
+
+export function recordHintUsed(game: GameState, puzzleId: string): GameState {
+  const puzzle = findPuzzleById(game, puzzleId);
+
+  if (!puzzle) {
+    return game;
+  }
+
+  return {
+    ...game,
+    hintsUsed: {
+      ...game.hintsUsed,
+      [puzzleId]: (game.hintsUsed[puzzleId] ?? 0) + 1,
+    },
+  };
+}
+
+export function canMoveToRoom(game: GameState, roomId: string): boolean {
+  if (!game.rooms.some((room) => room.id === roomId)) {
+    return false;
+  }
+
+  const currentRoom = getCurrentRoom(game);
+  const exit = currentRoom.exits.find((candidate) => candidate.toRoomId === roomId);
+
+  if (!exit || exit.final) {
+    return false;
+  }
+
+  return isExitUnlocked(game, exit);
+}
+
+export function checkVictoryCondition(game: GameState): boolean {
+  const currentRoom = getCurrentRoom(game);
+  const finalExit = currentRoom.exits.find((exit) => exit.final);
+
+  return Boolean(finalExit && isExitUnlocked(game, finalExit));
+}
+
+export function validateEffect(
+  game: GameState,
+  effect: GameEffect,
+): EffectValidationResult {
+  switch (effect.type) {
+    case "ADD_INVENTORY": {
+      if (!effect.item.id) {
+        return invalid("Inventory item is missing an id.");
+      }
+
+      if (game.inventory.some((item) => item.id === effect.item.id)) {
+        return invalid(`Inventory item already exists: ${effect.item.id}.`);
+      }
+
+      if (!collectibleItemExists(game, effect.item.id)) {
+        return invalid(`Inventory item does not exist in this game: ${effect.item.id}.`);
+      }
+
+      return valid();
+    }
+    case "DISCOVER_CLUE":
+      if (!clueExists(game, effect.clueId)) {
+        return invalid(`Clue does not exist: ${effect.clueId}.`);
+      }
+
+      if (game.discoveredClueIds.includes(effect.clueId)) {
+        return invalid(`Clue already discovered: ${effect.clueId}.`);
+      }
+
+      return valid();
+    case "SOLVE_PUZZLE": {
+      const room = game.rooms.find((candidate) => candidate.id === effect.roomId);
+
+      if (!room) {
+        return invalid(`Room does not exist: ${effect.roomId}.`);
+      }
+
+      if (room.puzzle.id !== effect.puzzleId) {
+        return invalid(
+          `Puzzle ${effect.puzzleId} does not belong to room ${effect.roomId}.`,
+        );
+      }
+
+      if (room.puzzle.solved || game.solvedPuzzleIds.includes(effect.puzzleId)) {
+        return invalid(`Puzzle already solved: ${effect.puzzleId}.`);
+      }
+
+      return valid();
+    }
+    case "MOVE_ROOM":
+      if (!game.rooms.some((room) => room.id === effect.roomId)) {
+        return invalid(`Room does not exist: ${effect.roomId}.`);
+      }
+
+      if (!canMoveToRoom(game, effect.roomId)) {
+        return invalid(`No unlocked exit leads to room: ${effect.roomId}.`);
+      }
+
+      return valid();
+    case "COMPLETE_OBJECTIVE": {
+      const objective = game.objectives.find(
+        (candidate) => candidate.id === effect.objectiveId,
+      );
+
+      if (!objective) {
+        return invalid(`Objective does not exist: ${effect.objectiveId}.`);
+      }
+
+      if (objective.completed) {
+        return invalid(`Objective already completed: ${effect.objectiveId}.`);
+      }
+
+      return valid();
+    }
+    case "ESCAPE":
+      if (game.status === "escaped") {
+        return invalid("Game is already escaped.");
+      }
+
+      if (!checkVictoryCondition(game)) {
+        return invalid("Victory condition has not been met.");
+      }
+
+      return valid();
+    case "ADD_NARRATIVE":
+      if (!effect.entry.id || !effect.entry.content.trim()) {
+        return invalid("Narrative entry is missing required content.");
+      }
+
+      return valid();
+  }
+}
+
+export function applyEffects(
+  game: GameState,
+  effects: GameEffect[],
+): GameState {
+  return effects.reduce((nextGame, effect) => {
+    const validation = validateEffect(nextGame, effect);
+
+    if (!validation.valid) {
+      logRejectedEffect(effect, validation.reason ?? "Unknown rejection.");
+      return nextGame;
+    }
+
+    return applyValidatedEffect(nextGame, effect);
+  }, game);
+}
+
+export const applyGameEffects = applyEffects;
 
 export function runCommand(game: GameState, command: string): PlayerActionResult {
   const cleanCommand = command.trim();
@@ -126,7 +416,7 @@ export function runCommand(game: GameState, command: string): PlayerActionResult
   }
 
   const room = getCurrentRoom(game);
-  const normalized = normalize(cleanCommand);
+  const normalized = normalizeText(cleanCommand);
 
   if (normalized === "look" || normalized === "look around") {
     return result(
@@ -159,7 +449,7 @@ export function runCommand(game: GameState, command: string): PlayerActionResult
     normalized.startsWith("enter ") ||
     normalized.startsWith("say ")
   ) {
-    return solvePuzzle(game, room, cleanCommand, playerEffect);
+    return answerPuzzleCommand(game, room, cleanCommand, playerEffect);
   }
 
   if (
@@ -171,7 +461,7 @@ export function runCommand(game: GameState, command: string): PlayerActionResult
     normalized === "south" ||
     normalized === "exit"
   ) {
-    return movePlayer(game, room, cleanCommand, playerEffect);
+    return movePlayerCommand(game, room, cleanCommand, playerEffect);
   }
 
   return result(
@@ -221,91 +511,30 @@ export function requestHint(
   );
 }
 
-export function recordHintUsed(game: GameState, puzzleId: string): GameState {
-  return {
-    ...game,
-    hintsUsed: {
-      ...game.hintsUsed,
-      [puzzleId]: (game.hintsUsed[puzzleId] ?? 0) + 1,
-    },
-  };
-}
-
-export function applyGameEffects(
-  game: GameState,
-  effects: GameEffect[],
-): GameState {
-  return effects.reduce(applyGameEffect, game);
-}
-
-function applyGameEffect(game: GameState, effect: GameEffect): GameState {
+function applyValidatedEffect(game: GameState, effect: GameEffect): GameState {
   switch (effect.type) {
     case "ADD_INVENTORY":
-      if (game.inventory.some((item) => item.id === effect.item.id)) {
-        return game;
-      }
-
-      return {
-        ...game,
-        inventory: [...game.inventory, effect.item],
-      };
+      return addInventoryItem(game, effect.item);
     case "DISCOVER_CLUE":
-      if (game.discoveredClueIds.includes(effect.clueId)) {
-        return game;
-      }
-
-      return {
-        ...game,
-        discoveredClueIds: [...game.discoveredClueIds, effect.clueId],
-      };
+      return discoverClue(game, effect.clueId);
     case "SOLVE_PUZZLE":
-      return {
-        ...game,
-        solvedPuzzleIds: game.solvedPuzzleIds.includes(effect.puzzleId)
-          ? game.solvedPuzzleIds
-          : [...game.solvedPuzzleIds, effect.puzzleId],
-        rooms: game.rooms.map((room) =>
-          room.id === effect.roomId
-            ? {
-                ...room,
-                completed: true,
-                puzzle: {
-                  ...room.puzzle,
-                  solved: true,
-                },
-              }
-            : room,
-        ),
-      };
+      return solvePuzzle(game, effect.puzzleId, effect.roomId);
     case "MOVE_ROOM":
-      return {
-        ...game,
-        currentRoomId: effect.roomId,
-      };
+      return moveToRoom(game, effect.roomId);
     case "COMPLETE_OBJECTIVE":
-      return {
-        ...game,
-        objectives: game.objectives.map((objective) =>
-          objective.id === effect.objectiveId
-            ? { ...objective, completed: true }
-            : objective,
-        ),
-      };
+      return completeObjective(game, effect.objectiveId);
     case "ESCAPE":
       return {
         ...game,
         status: "escaped",
       };
     case "ADD_NARRATIVE":
-      return {
-        ...game,
-        narrativeHistory: [...game.narrativeHistory, effect.entry].slice(-40),
-      };
+      return addNarrativeEntry(game, effect.entry);
   }
 }
 
 function describeRoom(room: Room, game: GameState) {
-  const objects = availableObjects(room);
+  const objects = getVisibleObjects(room);
   const objectText = objects.length
     ? `Visible objects: ${objects.map((object) => object.name).join(", ")}.`
     : "No visible objects stand out.";
@@ -326,7 +555,7 @@ function takeObject(
   playerEffect: GameEffect,
 ): PlayerActionResult {
   const target = command.replace(/^(take|get)\s+/i, "");
-  const object = availableObjects(room).find(
+  const object = getVisibleObjects(room).find(
     (candidate) =>
       candidate.collectibleItemId &&
       !game.inventory.some((item) => item.id === candidate.collectibleItemId) &&
@@ -382,7 +611,7 @@ function inspectObject(
     return result("INSPECT", clue.id, true, clue.content, [playerEffect]);
   }
 
-  const object = availableObjects(room).find((candidate) =>
+  const object = getVisibleObjects(room).find((candidate) =>
     textMatches(target, [candidate.id, candidate.name]),
   );
 
@@ -398,7 +627,6 @@ function inspectObject(
   const discoveryEffects = object.searchable
     ? getDiscoveryEffects(game, room, object)
     : [];
-  const inventoryEffect = getInventoryEffect(game, object);
   const clueText = object.searchable ? describeDiscoveredClues(room, object) : "";
 
   return result(
@@ -406,11 +634,11 @@ function inspectObject(
     object.id,
     true,
     `${object.description} ${clueText}`.trim(),
-    [playerEffect, ...discoveryEffects, ...inventoryEffect],
+    [playerEffect, ...discoveryEffects],
   );
 }
 
-function solvePuzzle(
+function answerPuzzleCommand(
   game: GameState,
   room: Room,
   command: string,
@@ -427,9 +655,8 @@ function solvePuzzle(
   }
 
   const answer = command.replace(/^(answer|enter|say)\s+/i, "");
-  const accepted = [room.puzzle.solution, ...room.puzzle.acceptedAnswers];
 
-  if (!accepted.some((candidate) => normalize(candidate) === normalize(answer))) {
+  if (!isPuzzleAnswerCorrect(room.puzzle, answer)) {
     return result(
       "ANSWER",
       room.puzzle.id,
@@ -453,7 +680,7 @@ function solvePuzzle(
   ]);
 }
 
-function movePlayer(
+function movePlayerCommand(
   game: GameState,
   room: Room,
   command: string,
@@ -479,10 +706,7 @@ function movePlayer(
     );
   }
 
-  if (
-    exit.requiredPuzzleId &&
-    !game.solvedPuzzleIds.includes(exit.requiredPuzzleId)
-  ) {
+  if (!isExitUnlocked(game, exit)) {
     return result("MOVE", exit.id, false, "That exit is still locked.", [
       playerEffect,
     ]);
@@ -571,25 +795,6 @@ function iconForItem(itemId: string) {
   return "box";
 }
 
-function getInventoryEffect(
-  game: GameState,
-  object: RoomObject,
-): GameEffect[] {
-  if (
-    !object.collectibleItemId ||
-    game.inventory.some((item) => item.id === object.collectibleItemId)
-  ) {
-    return [];
-  }
-
-  return [
-    {
-      type: "ADD_INVENTORY",
-      item: itemFromObject(object),
-    },
-  ];
-}
-
 function getDiscoveryEffects(
   game: GameState,
   room: Room,
@@ -635,4 +840,25 @@ function getMissingItemMessage(game: GameState, object: RoomObject) {
 
 function formatItemName(itemId: string) {
   return itemId.replaceAll("-", " ");
+}
+
+function isExitUnlocked(game: GameState, exit: RoomExit): boolean {
+  return (
+    !exit.requiredPuzzleId ||
+    game.solvedPuzzleIds.includes(exit.requiredPuzzleId)
+  );
+}
+
+function clueExists(game: GameState, clueId: string): boolean {
+  return game.rooms.some((room) => room.clues.some((clue) => clue.id === clueId));
+}
+
+function collectibleItemExists(game: GameState, itemId: string): boolean {
+  return game.rooms.some((room) =>
+    room.objects.some((object) => object.collectibleItemId === itemId),
+  );
+}
+
+function findPuzzleById(game: GameState, puzzleId: string): Puzzle | undefined {
+  return game.rooms.find((room) => room.puzzle.id === puzzleId)?.puzzle;
 }
