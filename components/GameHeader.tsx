@@ -1,4 +1,4 @@
-import Link from "next/link";
+/* eslint-disable @next/next/no-html-link-for-pages -- Vinext dev server fails to proxy next/link in client RSC modules. */
 import { RotateCcw, Shield } from "lucide-react";
 
 interface GameHeaderProps {
@@ -27,12 +27,12 @@ export function GameHeader({
         <p className="mt-1 text-sm text-slate-400">{currentRoomName}</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Link
+        <a
           href="/"
           className="inline-flex h-10 items-center justify-center rounded-lg border border-teal-300/20 bg-teal-300/10 px-4 text-sm font-semibold text-teal-100 transition hover:bg-teal-300/15"
         >
           Setup
-        </Link>
+        </a>
         <button
           type="button"
           onClick={onReset}

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Cpu, Play, Sparkles } from "lucide-react";
 import { sampleGame } from "@/lib/sample-game";
 
@@ -19,13 +18,13 @@ export function AdventureSetup() {
             hooks are scaffolded but intentionally not connected yet.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
+            <a
               href="/game"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-emerald-300 px-5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-200"
             >
               <Play className="h-4 w-4" />
               Start sample game
-            </Link>
+            </a>
             <div className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-purple-300/25 bg-purple-300/10 px-5 text-sm font-semibold text-purple-100">
               <Sparkles className="h-4 w-4" />
               {sampleGame.rooms.length} connected rooms

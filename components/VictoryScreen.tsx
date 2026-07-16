@@ -1,4 +1,4 @@
-import Link from "next/link";
+/* eslint-disable @next/next/no-html-link-for-pages -- Vinext dev server fails to proxy next/link in client RSC modules. */
 import { Trophy } from "lucide-react";
 
 interface VictoryScreenProps {
@@ -27,12 +27,12 @@ export function VictoryScreen({ title, text, onReset }: VictoryScreenProps) {
           >
             Play again
           </button>
-          <Link
+          <a
             href="/"
             className="inline-flex h-11 items-center justify-center rounded-lg border border-purple-300/25 bg-purple-300/10 px-5 text-sm font-semibold text-purple-100 transition hover:bg-purple-300/15"
           >
             Back to setup
-          </Link>
+          </a>
         </div>
       </div>
     </section>
