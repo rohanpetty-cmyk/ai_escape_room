@@ -441,7 +441,15 @@ export function runCommand(game: GameState, command: string): PlayerActionResult
     normalized.startsWith("examine ") ||
     normalized.startsWith("read ")
   ) {
-    return inspectObject(game, room, cleanCommand, playerEffect);
+    return inspectObject(game, room, cleanCommand, playerEffect, "INSPECT");
+  }
+
+  if (normalized.startsWith("search ")) {
+    return inspectObject(game, room, cleanCommand, playerEffect, "SEARCH");
+  }
+
+  if (normalized.startsWith("use ")) {
+    return handleItemUse(game, room, cleanCommand, playerEffect);
   }
 
   if (
@@ -601,14 +609,15 @@ function inspectObject(
   room: Room,
   command: string,
   playerEffect: GameEffect,
+  intent: "INSPECT" | "SEARCH",
 ): PlayerActionResult {
-  const target = command.replace(/^(inspect|examine|read)\s+/i, "");
+  const target = command.replace(/^(inspect|examine|read|search)\s+/i, "");
   const clue = room.clues.find((candidate) =>
     textMatches(target, [candidate.id, candidate.title]),
   );
 
   if (clue && game.discoveredClueIds.includes(clue.id)) {
-    return result("INSPECT", clue.id, true, clue.content, [playerEffect]);
+    return result(intent, clue.id, true, clue.content, [playerEffect]);
   }
 
   const object = getVisibleObjects(room).find((candidate) =>
@@ -616,12 +625,12 @@ function inspectObject(
   );
 
   if (!object) {
-    return result("INSPECT", null, false, describeRoom(room, game), [playerEffect]);
+    return result(intent, null, false, describeRoom(room, game), [playerEffect]);
   }
 
   const missingItemMessage = getMissingItemMessage(game, object);
   if (missingItemMessage) {
-    return result("INSPECT", object.id, false, missingItemMessage, [playerEffect]);
+    return result(intent, object.id, false, missingItemMessage, [playerEffect]);
   }
 
   const discoveryEffects = object.searchable
@@ -630,10 +639,81 @@ function inspectObject(
   const clueText = object.searchable ? describeDiscoveredClues(room, object) : "";
 
   return result(
-    "INSPECT",
+    intent,
     object.id,
     true,
     `${object.description} ${clueText}`.trim(),
+    [playerEffect, ...discoveryEffects],
+  );
+}
+
+function handleItemUse(
+  game: GameState,
+  room: Room,
+  command: string,
+  playerEffect: GameEffect,
+): PlayerActionResult {
+  const target = command.replace(/^use\s+/i, "");
+  const useMatch = target.match(/^(.+?)\s+(?:on|with|in|at)\s+(.+)$/i);
+
+  if (!useMatch) {
+    return result(
+      "USE",
+      null,
+      false,
+      "Use what, and on which part of the room?",
+      [playerEffect],
+    );
+  }
+
+  const [, itemTarget, objectTarget] = useMatch;
+  const item = game.inventory.find((candidate) =>
+    textMatches(itemTarget, [candidate.id, candidate.name]),
+  );
+
+  if (!item) {
+    return result("USE", null, false, "You are not carrying that item.", [
+      playerEffect,
+    ]);
+  }
+
+  const object = getVisibleObjects(room).find((candidate) =>
+    textMatches(objectTarget, [candidate.id, candidate.name]),
+  );
+
+  if (!object) {
+    return result("USE", null, false, "There is nothing like that here.", [
+      playerEffect,
+    ]);
+  }
+
+  if (object.requiredItemId && object.requiredItemId !== item.id) {
+    return result(
+      "USE",
+      object.id,
+      false,
+      `${item.name} does not connect cleanly with ${object.name}.`,
+      [playerEffect],
+    );
+  }
+
+  if (!object.requiredItemId) {
+    return result(
+      "USE",
+      object.id,
+      false,
+      `${object.name} does not seem to need ${item.name}.`,
+      [playerEffect],
+    );
+  }
+
+  const discoveryEffects = getDiscoveryEffects(game, room, object);
+
+  return result(
+    "USE",
+    object.id,
+    true,
+    `${object.description} ${describeDiscoveredClues(room, object)}`.trim(),
     [playerEffect, ...discoveryEffects],
   );
 }

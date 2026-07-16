@@ -25,6 +25,8 @@ export default function GamePage() {
   const submitCommand = useAdventureStore((state) => state.submitCommand);
   const requestCurrentHint = useAdventureStore((state) => state.requestCurrentHint);
   const [isBooting, setIsBooting] = useState(true);
+  const [isSubmittingCommand, setIsSubmittingCommand] = useState(false);
+  const [commandError, setCommandError] = useState<string | null>(null);
 
   useEffect(() => {
     const mode = new URLSearchParams(window.location.search).get("mode");
@@ -44,6 +46,25 @@ export default function GamePage() {
   const victoryText =
     game.narrativeHistory.at(-1)?.content ??
     "The final exit opens and the escape room falls silent.";
+
+  async function handleSubmitCommand(command: string) {
+    setCommandError(null);
+    setIsSubmittingCommand(true);
+
+    try {
+      await submitCommand(command);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "The Dungeon Master could not process that action.";
+
+      setCommandError(message);
+      throw error;
+    } finally {
+      setIsSubmittingCommand(false);
+    }
+  }
 
   if (isBooting) {
     return <LoadingSequence />;
@@ -73,7 +94,9 @@ export default function GamePage() {
             <RoomVisual room={room} />
             <CommandInput
               disabled={game.status === "escaped"}
-              onSubmit={submitCommand}
+              error={commandError}
+              loading={isSubmittingCommand}
+              onSubmit={handleSubmitCommand}
             />
             <NarrativePanel entries={game.narrativeHistory} />
           </div>

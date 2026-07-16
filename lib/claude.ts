@@ -1,12 +1,16 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ContentBlock } from "@anthropic-ai/sdk/resources/messages";
 import { gameStateSchema } from "./schemas";
+import { playerActionResultSchema } from "./schemas";
 import {
   buildGameGenerationPrompt,
+  buildDungeonMasterPrompt,
+  DUNGEON_MASTER_SYSTEM_PROMPT,
   GAME_ARCHITECT_SYSTEM_PROMPT,
+  type DungeonMasterPromptInput,
   type GameGenerationPromptInput,
 } from "./prompts";
-import type { GameState, Room } from "./types";
+import type { GameState, PlayerActionResult, Room } from "./types";
 
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-5-20250929";
 const GENERATION_TIMEOUT_MS = 20_000;
@@ -18,6 +22,13 @@ export type ClaudeGenerationErrorCode =
   | "JSON_PARSE_FAILED"
   | "SCHEMA_VALIDATION_FAILED"
   | "GAME_INVARIANT_FAILED";
+
+export type ClaudeActionErrorCode =
+  | "MISSING_API_KEY"
+  | "CLAUDE_REQUEST_FAILED"
+  | "EMPTY_RESPONSE"
+  | "JSON_PARSE_FAILED"
+  | "SCHEMA_VALIDATION_FAILED";
 
 export interface ClaudeStatus {
   configured: boolean;
@@ -43,6 +54,22 @@ export type ClaudeGenerationResult =
   | ClaudeGenerationSuccess
   | ClaudeGenerationFailure;
 
+export interface ClaudeActionSuccess {
+  ok: true;
+  result: PlayerActionResult;
+  model: string;
+}
+
+export interface ClaudeActionFailure {
+  ok: false;
+  code: ClaudeActionErrorCode;
+  message: string;
+  model: string;
+  issues?: string[];
+}
+
+export type ClaudeActionResult = ClaudeActionSuccess | ClaudeActionFailure;
+
 export function getClaudeStatus(): ClaudeStatus {
   const configured = Boolean(process.env.ANTHROPIC_API_KEY);
   const model = getClaudeModel();
@@ -51,7 +78,7 @@ export function getClaudeStatus(): ClaudeStatus {
     configured,
     model,
     message: configured
-      ? "Claude generation is configured."
+      ? "Claude API access is configured."
       : "ANTHROPIC_API_KEY is not configured. Static fallback mode is active.",
   };
 }
@@ -63,7 +90,7 @@ export async function generateGameWithClaude(
   const model = getClaudeModel();
 
   if (!apiKey) {
-    return failure(
+    return generationFailure(
       "MISSING_API_KEY",
       "ANTHROPIC_API_KEY is not configured. Using the static fallback game.",
       model,
@@ -99,7 +126,7 @@ export async function generateGameWithClaude(
 
     rawText = extractTextContent(message.content);
   } catch {
-    return failure(
+    return generationFailure(
       "CLAUDE_REQUEST_FAILED",
       "Claude did not return a game in time. Using the static fallback game.",
       model,
@@ -107,7 +134,7 @@ export async function generateGameWithClaude(
   }
 
   if (!rawText.trim()) {
-    return failure(
+    return generationFailure(
       "EMPTY_RESPONSE",
       "Claude returned an empty response. Using the static fallback game.",
       model,
@@ -118,7 +145,7 @@ export async function generateGameWithClaude(
   const parsedJson = parseJson(jsonText);
 
   if (!parsedJson.ok) {
-    return failure(
+    return generationFailure(
       "JSON_PARSE_FAILED",
       "Claude returned text that could not be parsed as JSON. Using the static fallback game.",
       model,
@@ -128,7 +155,7 @@ export async function generateGameWithClaude(
   const parsedGame = gameStateSchema.safeParse(parsedJson.value);
 
   if (!parsedGame.success) {
-    return failure(
+    return generationFailure(
       "SCHEMA_VALIDATION_FAILED",
       "Claude returned JSON that did not match the GameState schema. Using the static fallback game.",
       model,
@@ -139,7 +166,7 @@ export async function generateGameWithClaude(
   const invariantIssues = validateGeneratedGame(parsedGame.data, input);
 
   if (invariantIssues.length > 0) {
-    return failure(
+    return generationFailure(
       "GAME_INVARIANT_FAILED",
       "Claude returned a game that failed gameplay validation. Using the static fallback game.",
       model,
@@ -150,6 +177,93 @@ export async function generateGameWithClaude(
   return {
     ok: true,
     game: parsedGame.data,
+    model,
+  };
+}
+
+export async function processPlayerActionWithClaude(
+  input: DungeonMasterPromptInput,
+): Promise<ClaudeActionResult> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const model = getClaudeModel();
+
+  if (!apiKey) {
+    return actionFailure(
+      "MISSING_API_KEY",
+      "ANTHROPIC_API_KEY is not configured. Using deterministic local action handling.",
+      model,
+    );
+  }
+
+  const client = new Anthropic({
+    apiKey,
+    maxRetries: 0,
+    timeout: GENERATION_TIMEOUT_MS,
+  });
+
+  let rawText: string;
+
+  try {
+    const message = await client.messages.create(
+      {
+        model,
+        max_tokens: 1_200,
+        temperature: 0.25,
+        system: DUNGEON_MASTER_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: "user",
+            content: buildDungeonMasterPrompt(input),
+          },
+        ],
+      },
+      {
+        timeout: GENERATION_TIMEOUT_MS,
+      },
+    );
+
+    rawText = extractTextContent(message.content);
+  } catch {
+    return actionFailure(
+      "CLAUDE_REQUEST_FAILED",
+      "Claude could not process that action in time. The current game state was preserved.",
+      model,
+    );
+  }
+
+  if (!rawText.trim()) {
+    return actionFailure(
+      "EMPTY_RESPONSE",
+      "Claude returned an empty action response. The current game state was preserved.",
+      model,
+    );
+  }
+
+  const jsonText = stripMarkdownCodeFences(rawText);
+  const parsedJson = parseJson(jsonText);
+
+  if (!parsedJson.ok) {
+    return actionFailure(
+      "JSON_PARSE_FAILED",
+      "Claude returned action text that could not be parsed as JSON. The current game state was preserved.",
+      model,
+    );
+  }
+
+  const parsedAction = playerActionResultSchema.safeParse(parsedJson.value);
+
+  if (!parsedAction.success) {
+    return actionFailure(
+      "SCHEMA_VALIDATION_FAILED",
+      "Claude returned an action response that did not match the PlayerActionResult schema. The current game state was preserved.",
+      model,
+      parsedAction.error.issues.map((issue) => issue.path.join(".") || issue.message),
+    );
+  }
+
+  return {
+    ok: true,
+    result: parsedAction.data,
     model,
   };
 }
@@ -396,12 +510,27 @@ function isUrlSafeId(id: string) {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id);
 }
 
-function failure(
+function generationFailure(
   code: ClaudeGenerationErrorCode,
   message: string,
   model: string,
   issues?: string[],
 ): ClaudeGenerationFailure {
+  return {
+    ok: false,
+    code,
+    message,
+    model,
+    issues,
+  };
+}
+
+function actionFailure(
+  code: ClaudeActionErrorCode,
+  message: string,
+  model: string,
+  issues?: string[],
+): ClaudeActionFailure {
   return {
     ok: false,
     code,

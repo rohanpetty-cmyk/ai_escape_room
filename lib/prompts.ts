@@ -8,6 +8,63 @@ export interface GameGenerationPromptInput {
   demoMode: boolean;
 }
 
+export interface DungeonMasterPromptInput {
+  action: string;
+  answerAttempt: boolean;
+  currentRoom: {
+    id: string;
+    name: string;
+    description: string;
+    puzzle: {
+      id: string;
+      type: string;
+      prompt: string;
+      solved: boolean;
+      solution?: string;
+      acceptedAnswers?: string[];
+    };
+  };
+  visibleObjects: Array<{
+    id: string;
+    name: string;
+    description: string;
+    searchable: boolean;
+    requiredItemId: string | null;
+    collectibleItem: {
+      id: string;
+      name: string;
+      description: string;
+      icon: string;
+    } | null;
+    discoverableClues: Array<{
+      id: string;
+      title: string;
+      content: string;
+    }>;
+  }>;
+  currentInventory: Array<{
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+  }>;
+  discoveredClues: Array<{
+    id: string;
+    title: string;
+    content: string;
+  }>;
+  solvedPuzzleIds: string[];
+  availableExits: Array<{
+    id: string;
+    label: string;
+    direction: string;
+    toRoomId: string | null;
+    requiredPuzzleId: string | null;
+    final: boolean;
+    unlocked: boolean;
+  }>;
+}
+
 export const GAME_ARCHITECT_SYSTEM_PROMPT = [
   "You are Game Architect, a meticulous escape-room designer for a full-stack app called AI Escape Room.",
   "Your job is to generate fair, deterministic, self-contained escape rooms as JSON only.",
@@ -16,6 +73,18 @@ export const GAME_ARCHITECT_SYSTEM_PROMPT = [
   "Every room must have exactly one puzzle, three progressive hints, and enough clues for a reasonable player to solve it without guessing.",
   "IDs must be unique, lowercase, URL-safe slugs using only a-z, 0-9, and hyphens.",
   "Do not include markdown, code fences, commentary, comments, or trailing prose. Return one JSON object and nothing else.",
+].join("\n");
+
+export const DUNGEON_MASTER_SYSTEM_PROMPT = [
+  "You are the Dungeon Master for AI Escape Room.",
+  "Your job is to interpret one natural-language player action against the supplied room context and return JSON only.",
+  "You do not mutate game state. You may only propose effects; the deterministic game engine will validate and apply them.",
+  "Use only IDs that appear in the supplied context. Never invent rooms, objects, items, clues, puzzles, exits, objectives, or narrative IDs.",
+  "Invalid, impossible, vague, or unsafe actions must still receive an immersive in-world narration with valid false and no state-changing effects.",
+  "Do not include ADD_NARRATIVE or COMPLETE_OBJECTIVE effects. The server adds narrative entries and objective completion deterministically.",
+  "Do not solve a puzzle unless the context includes a puzzle solution and the player's action explicitly attempts an answer.",
+  "Do not use outside knowledge, riddles, hidden assumptions, or information that is not in the context.",
+  "Return one JSON object and nothing else. Do not include markdown, code fences, comments, or trailing prose.",
 ].join("\n");
 
 export function buildGameGenerationPrompt({
@@ -135,5 +204,45 @@ export function buildPlayerActionPrompt(command: string, game: GameState): strin
     `Game: ${game.title}`,
     `Command: ${command}`,
     "Return only JSON. Do not mutate game state.",
+  ].join("\n");
+}
+
+export function buildDungeonMasterPrompt(context: DungeonMasterPromptInput): string {
+  return [
+    "Interpret the player action using only this context:",
+    JSON.stringify(context, null, 2),
+    "",
+    "Return JSON matching this exact shape:",
+    `{
+  "intent": "LOOK" | "INSPECT" | "SEARCH" | "TAKE" | "USE" | "ANSWER" | "MOVE" | "REQUEST_HINT" | "UNKNOWN",
+  "targetId": "id-from-context-or-null",
+  "valid": true,
+  "narration": "short immersive response in second person",
+  "effects": [
+    { "type": "DISCOVER_CLUE", "clueId": "clue-id-from-context" },
+    {
+      "type": "ADD_INVENTORY",
+      "item": {
+        "id": "collectible-item-id-from-context",
+        "name": "item name from context",
+        "description": "item description from context",
+        "icon": "item icon from context"
+      }
+    },
+    { "type": "SOLVE_PUZZLE", "puzzleId": "current-puzzle-id", "roomId": "current-room-id" },
+    { "type": "MOVE_ROOM", "roomId": "destination-room-id-from-an-unlocked-exit" },
+    { "type": "ESCAPE" }
+  ]
+}`,
+    "",
+    "Effect rules:",
+    "- LOOK should describe the room and usually has no state-changing effects.",
+    "- INSPECT or SEARCH may reveal clue IDs listed on visibleObjects.discoverableClues.",
+    "- TAKE may add only a visible collectibleItem from the current room.",
+    "- USE may reveal clues only when the required item is present in currentInventory.",
+    "- ANSWER may solve only currentRoom.puzzle, and only when answerAttempt is true and a solution is present.",
+    "- MOVE_ROOM may target only the toRoomId of an unlocked, non-final available exit.",
+    "- ESCAPE may be proposed only when an unlocked final available exit is being used.",
+    "- If no rule fits, use UNKNOWN, valid false, a helpful in-world narration, and an empty effects array.",
   ].join("\n");
 }

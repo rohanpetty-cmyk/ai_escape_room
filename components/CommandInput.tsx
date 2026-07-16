@@ -1,24 +1,35 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Send } from "lucide-react";
+import { AlertTriangle, Loader2, Send } from "lucide-react";
 
 interface CommandInputProps {
   disabled: boolean;
-  onSubmit: (command: string) => void;
+  error?: string | null;
+  loading: boolean;
+  onSubmit: (command: string) => Promise<void> | void;
 }
 
-export function CommandInput({ disabled, onSubmit }: CommandInputProps) {
+export function CommandInput({
+  disabled,
+  error,
+  loading,
+  onSubmit,
+}: CommandInputProps) {
   const [command, setCommand] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const nextCommand = command.trim();
-    if (!nextCommand) return;
+    if (!nextCommand || disabled || loading) return;
 
-    onSubmit(nextCommand);
-    setCommand("");
+    try {
+      await onSubmit(nextCommand);
+      setCommand("");
+    } catch {
+      // The page owns the visible error state and keeps the command available.
+    }
   }
 
   return (
@@ -34,19 +45,30 @@ export function CommandInput({ disabled, onSubmit }: CommandInputProps) {
           id="command"
           value={command}
           onChange={(event) => setCommand(event.target.value)}
-          disabled={disabled}
+          disabled={disabled || loading}
+          maxLength={180}
           placeholder="inspect status wall, take admin badge, answer A17..."
           className="h-12 min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-300/60"
         />
         <button
           type="submit"
-          disabled={disabled || !command.trim()}
+          disabled={disabled || loading || !command.trim()}
           className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-300 text-slate-950 transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="Submit command"
+          aria-label={loading ? "Processing command" : "Submit command"}
         >
-          <Send className="h-4 w-4" />
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
         </button>
       </div>
+      {error ? (
+        <p className="mt-3 flex items-start gap-2 rounded-lg border border-rose-300/20 bg-rose-400/10 px-3 py-2 text-sm leading-6 text-rose-100">
+          <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </p>
+      ) : null}
     </form>
   );
 }

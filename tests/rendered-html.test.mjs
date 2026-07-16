@@ -34,7 +34,7 @@ test("server-renders the AI Escape Room shell", async () => {
   const html = await response.text();
   assert.match(html, /<title>AI Escape Room<\/title>/i);
   assert.match(html, /AI Escape Room/);
-  assert.match(html, /Static scaffold mode/);
+  assert.match(html, /Local-first escape engine/);
   assert.match(html, /Start sample adventure/);
   assert.match(html, /Play quick demo/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);

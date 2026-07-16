@@ -22,26 +22,31 @@ fallback.
 
 ## Claude Setup
 
-Game generation can call Claude from the server-side API route. Keep these
-values in your local environment, not in client code:
+Game generation and Dungeon Master action interpretation can call Claude from
+server-side API routes. Keep these values in your local environment, not in
+client code:
 
 ```bash
 ANTHROPIC_API_KEY=your_claude_key
 CLAUDE_MODEL=claude-sonnet-4-5-20250929
 ```
 
-If Claude is not configured or returns invalid JSON, the API returns the static
-sample or demo game as a fallback.
+If Claude is not configured, game generation returns the static sample or demo
+game as a fallback and player actions use deterministic local action handling.
+Malformed Claude action responses are rejected so the current game state is
+preserved.
 
 ## Architecture
 
 - `lib/game-engine.ts` owns deterministic state changes.
 - `lib/sample-game.ts` provides the static playable escape room.
 - `lib/schemas.ts` defines Zod contracts for AI-generated JSON.
-- `lib/claude.ts` calls Claude, parses JSON, and validates generated games.
+- `lib/claude.ts` calls Claude, parses JSON, and validates generated games and
+  Dungeon Master action responses.
 - `app/api/generate-game/route.ts` validates generation requests and returns
   Claude output or a static fallback.
-- `app/api/player-action/route.ts` is a player-action placeholder.
+- `app/api/player-action/route.ts` sends minimal room context to Claude and
+  applies only deterministic engine-validated effects.
 - `app/api/hint/route.ts` is a hint placeholder.
 - `state/adventureStore.ts` stores and refresh-recovers local game progress.
 

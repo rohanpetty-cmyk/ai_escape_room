@@ -18,7 +18,9 @@ export const gameStatusSchema = z.enum(["not_started", "playing", "escaped"]);
 export const playerActionIntentSchema = z.enum([
   "LOOK",
   "INSPECT",
+  "SEARCH",
   "TAKE",
+  "USE",
   "ANSWER",
   "MOVE",
   "REQUEST_HINT",
@@ -176,6 +178,23 @@ export const playerActionSchema = z.object({
   command: z.string().trim().min(1).max(180),
 });
 
+export const playerActionRequestSchema = z.object({
+  action: z.string().trim().min(1).max(180),
+  gameState: gameStateSchema,
+});
+
+export const playerActionResponseSchema = z.object({
+  source: z.enum(["claude", "deterministic-fallback"]),
+  result: playerActionResultSchema,
+  gameState: gameStateSchema,
+  warning: z
+    .object({
+      code: z.string().min(1),
+      message: z.string().min(1),
+    })
+    .optional(),
+});
+
 export const hintRequestSchema = z.object({
   roomId: z.string().min(1),
   puzzleId: z.string().min(1),
@@ -193,4 +212,6 @@ export type GameStateInput = z.infer<typeof gameStateSchema>;
 export type GameEffectInput = z.infer<typeof gameEffectSchema>;
 export type PlayerActionResultInput = z.infer<typeof playerActionResultSchema>;
 export type PlayerActionInput = z.infer<typeof playerActionSchema>;
+export type PlayerActionRequestInput = z.infer<typeof playerActionRequestSchema>;
+export type PlayerActionResponseInput = z.infer<typeof playerActionResponseSchema>;
 export type HintRequestInput = z.infer<typeof hintRequestSchema>;

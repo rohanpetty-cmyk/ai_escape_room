@@ -8,15 +8,14 @@ export function AdventureSetup() {
         <div>
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-sm text-emerald-200">
             <Cpu className="h-4 w-4" />
-            Static scaffold mode
+            Local-first escape engine
           </div>
           <h1 className="max-w-3xl text-5xl font-semibold leading-tight tracking-tight text-white md:text-7xl">
             AI Escape Room
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            Enter a cinematic lab escape built from static rooms, deterministic
-            rules, and fair clues. Claude hooks are scaffolded but intentionally
-            not connected yet.
+            Enter a cinematic lab escape built from deterministic rules, fair
+            clues, and an optional Claude-powered Dungeon Master when configured.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a

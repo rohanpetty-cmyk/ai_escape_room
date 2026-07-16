@@ -12,8 +12,8 @@ import {
   getCurrentRoom,
   requestHint,
   recordHintUsed,
-  runCommand,
 } from "@/lib/game-engine";
+import { playerActionResponseSchema } from "@/lib/schemas";
 import { demoGame, sampleGame } from "@/lib/sample-game";
 import type { GameState, PlayerActionResult } from "@/lib/types";
 
@@ -23,7 +23,7 @@ interface AdventureStore {
   startSampleGame: () => void;
   startDemoGame: () => void;
   resetGame: () => void;
-  submitCommand: (command: string) => PlayerActionResult;
+  submitCommand: (command: string) => Promise<PlayerActionResult>;
   requestCurrentHint: () => PlayerActionResult;
 }
 
@@ -53,22 +53,39 @@ export const useAdventureStore = create<AdventureStore>()(
           game: createInitialGame(state.game.demoMode ? demoGame : sampleGame),
           lastResult: undefined,
         })),
-      submitCommand: (command) => {
+      submitCommand: async (command) => {
         const { game } = get();
-        const actionResult = runCommand(game, command);
-        const hintedGame =
-          actionResult.intent === "REQUEST_HINT" &&
-          actionResult.valid &&
-          actionResult.targetId
-            ? recordHintUsed(game, actionResult.targetId)
-            : game;
-
-        set({
-          game: applyEffects(hintedGame, actionResult.effects),
-          lastResult: actionResult,
+        const response = await fetch("/api/player-action", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            action: command,
+            gameState: game,
+          }),
         });
 
-        return actionResult;
+        const payload: unknown = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(getActionErrorMessage(payload));
+        }
+
+        const parsed = playerActionResponseSchema.safeParse(payload);
+
+        if (!parsed.success) {
+          throw new Error(
+            "The Dungeon Master returned an unexpected response. Your game state was preserved.",
+          );
+        }
+
+        set({
+          game: parsed.data.gameState,
+          lastResult: parsed.data.result,
+        });
+
+        return parsed.data.result;
       },
       requestCurrentHint: () => {
         const { game } = get();
@@ -94,3 +111,21 @@ export const useAdventureStore = create<AdventureStore>()(
     },
   ),
 );
+
+function getActionErrorMessage(payload: unknown) {
+  if (!payload || typeof payload !== "object" || !("error" in payload)) {
+    return "The Dungeon Master could not process that action. Your game state was preserved.";
+  }
+
+  const error = payload.error;
+
+  if (!error || typeof error !== "object" || !("message" in error)) {
+    return "The Dungeon Master could not process that action. Your game state was preserved.";
+  }
+
+  const message = error.message;
+
+  return typeof message === "string"
+    ? message
+    : "The Dungeon Master could not process that action. Your game state was preserved.";
+}

@@ -3,7 +3,9 @@ export type GameStatus = "not_started" | "playing" | "escaped";
 export type PlayerActionIntent =
   | "LOOK"
   | "INSPECT"
+  | "SEARCH"
   | "TAKE"
+  | "USE"
   | "ANSWER"
   | "MOVE"
   | "REQUEST_HINT"
