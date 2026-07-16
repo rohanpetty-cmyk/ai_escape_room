@@ -16,41 +16,34 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-The app works without an AI key by using demo mode and a reliable fallback game.
+The app runs immediately with a static sample escape room. Claude is installed
+and scaffolded, but it is intentionally not connected yet.
 
-## AI Provider Setup
+## Claude Setup Later
 
-Use OpenAI:
-
-```bash
-AI_PROVIDER=openai
-OPENAI_API_KEY=your_openai_key
-OPENAI_MODEL=gpt-4.1-mini
-```
-
-Or use Claude:
+The current scaffold does not call Claude. When generation is connected later,
+use:
 
 ```bash
-AI_PROVIDER=anthropic
-ANTHROPIC_API_KEY=your_anthropic_key
-ANTHROPIC_MODEL=claude-3-5-sonnet-latest
+ANTHROPIC_API_KEY=your_claude_key
 ```
-
-If `AI_PROVIDER` is omitted, the app tries `OPENAI_API_KEY` first, then
-`ANTHROPIC_API_KEY`, then falls back to local deterministic content.
 
 ## Architecture
 
-- `lib/game/engine.ts` owns all deterministic state changes.
-- `lib/ai/provider.ts` selects OpenAI, Claude, or local fallback.
-- `app/api/games/generate/route.ts` generates and validates room definitions.
-- `app/api/actions/interpret/route.ts` maps player text to structured intents.
-- `state/gameStore.ts` persists game state to `localStorage`.
+- `lib/game-engine.ts` owns deterministic state changes.
+- `lib/sample-game.ts` provides the static playable escape room.
+- `lib/schemas.ts` defines Zod contracts for future AI-generated JSON.
+- `lib/claude.ts` confirms the Claude SDK is installed but not connected.
+- `app/api/generate-game/route.ts` is a generation placeholder.
+- `app/api/player-action/route.ts` is a player-action placeholder.
+- `app/api/hint/route.ts` is a hint placeholder.
+- `state/adventureStore.ts` stores and refresh-recovers local game progress.
 
 ## Useful Commands
 
 - `npm run dev`: start local development
 - `npm run build`: verify the vinext build output
+- `npm run typecheck`: run strict TypeScript checking
 - `npm test`: build and verify the rendered app shell
 - `npm run lint`: run ESLint
 

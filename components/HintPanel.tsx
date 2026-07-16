@@ -1,55 +1,56 @@
-"use client";
-
 import { Lightbulb } from "lucide-react";
-import { isPuzzleSolved } from "@/lib/game/engine";
-import type { GameState, Room } from "@/lib/game/types";
+import type { Room } from "@/lib/types";
 
 interface HintPanelProps {
   room: Room;
-  state: GameState;
-  onHint: () => void;
+  usedHintCount: number;
+  disabled: boolean;
+  onRequestHint: () => void;
 }
 
-export function HintPanel({ room, state, onHint }: HintPanelProps) {
-  const solved = isPuzzleSolved(room.puzzle, state);
-  const used = state.usedHintCountsByPuzzleId[room.puzzle.id] ?? 0;
-  const revealed = room.puzzle.hints.slice(0, used);
-  const remaining = Math.max(room.puzzle.hints.length - used, 0);
+export function HintPanel({
+  room,
+  usedHintCount,
+  disabled,
+  onRequestHint,
+}: HintPanelProps) {
+  const revealedHints = room.puzzle.hints.slice(0, usedHintCount);
+  const remaining = Math.max(room.puzzle.hints.length - usedHintCount, 0);
 
   return (
-    <aside className="rounded-lg border border-white/12 bg-[#151711] p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[#f5f1e8]">
-          <Lightbulb className="h-4 w-4 text-[#d7ff68]" />
+    <section className="rounded-lg border border-white/10 bg-slate-950/80 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-teal-200">
+          <Lightbulb className="h-4 w-4" />
           Hints
         </div>
-        <span className="text-xs text-[#a9a292]">{remaining} left</span>
+        <span className="text-xs text-slate-400">{remaining} left</span>
       </div>
-      <div className="grid gap-2">
-        {revealed.length ? (
-          revealed.map((hint, index) => (
+      <div className="mt-3 grid gap-2">
+        {revealedHints.length > 0 ? (
+          revealedHints.map((hint, index) => (
             <p
               key={`${room.puzzle.id}-${index}`}
-              className="rounded-lg border border-[#d7ff68]/18 bg-[#d7ff68]/8 px-3 py-3 text-sm leading-6 text-[#eee8d8]"
+              className="rounded-lg border border-teal-300/15 bg-teal-300/10 p-3 text-sm leading-6 text-teal-50"
             >
-              {hint.text}
+              {hint}
             </p>
           ))
         ) : (
-          <p className="rounded-lg border border-white/8 px-3 py-3 text-sm text-[#8f8a7d]">
-            None revealed
+          <p className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-400">
+            No hints revealed yet.
           </p>
         )}
         <button
           type="button"
-          onClick={onHint}
-          disabled={solved || remaining === 0}
-          className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-white/12 bg-white/6 px-3 text-sm font-semibold text-[#f5f1e8] transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={onRequestHint}
+          disabled={disabled || remaining === 0}
+          className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-teal-300 px-4 text-sm font-semibold text-slate-950 transition hover:bg-teal-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Lightbulb className="h-4 w-4" />
-          Hint
+          Reveal hint
         </button>
       </div>
-    </aside>
+    </section>
   );
 }

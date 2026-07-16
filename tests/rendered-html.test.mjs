@@ -34,8 +34,8 @@ test("server-renders the AI Escape Room shell", async () => {
   const html = await response.text();
   assert.match(html, /<title>AI Escape Room<\/title>/i);
   assert.match(html, /AI Escape Room/);
-  assert.match(html, /Demo mode/);
-  assert.match(html, /Generate escape/);
+  assert.match(html, /Static scaffold mode/);
+  assert.match(html, /Start sample game/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
@@ -46,7 +46,7 @@ test("removes starter preview artifacts", async () => {
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /<GameShell \/>/);
+  assert.match(page, /<AdventureSetup \/>/);
   assert.match(layout, /title:\s*"AI Escape Room"/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.doesNotMatch(page, /_sites-preview|codex-preview/);
