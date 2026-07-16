@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 import { playerActionSchema } from "@/lib/schemas";
-import type { CommandKind } from "@/lib/types";
+import type { PlayerActionIntent } from "@/lib/types";
 
-function previewCommandKind(command: string): CommandKind {
+function previewActionIntent(command: string): PlayerActionIntent {
   const normalized = command.toLowerCase().trim();
 
   if (normalized.startsWith("inspect ") || normalized.startsWith("read ")) {
-    return "inspect";
+    return "INSPECT";
   }
 
   if (normalized.startsWith("take ") || normalized.startsWith("get ")) {
-    return "take";
+    return "TAKE";
   }
 
   if (normalized.startsWith("answer ") || normalized.startsWith("enter ")) {
-    return "answer";
+    return "ANSWER";
   }
 
   if (
@@ -22,18 +22,18 @@ function previewCommandKind(command: string): CommandKind {
     normalized.startsWith("move ") ||
     normalized === "exit"
   ) {
-    return "move";
+    return "MOVE";
   }
 
   if (normalized === "hint") {
-    return "hint";
+    return "REQUEST_HINT";
   }
 
   if (normalized === "look" || normalized === "look around") {
-    return "look";
+    return "LOOK";
   }
 
-  return "unknown";
+  return "UNKNOWN";
 }
 
 export async function POST(request: Request) {
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     message:
       "Player action API is scaffolded only. The current app applies commands locally with the deterministic game engine.",
     localIntentPreview: {
-      kind: previewCommandKind(parsed.data.command),
+      intent: previewActionIntent(parsed.data.command),
       command: parsed.data.command,
     },
   });

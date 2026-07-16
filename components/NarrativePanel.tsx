@@ -19,10 +19,10 @@ export function NarrativePanel({ entries }: NarrativePanelProps) {
               key={entry.id}
               className="rounded-lg border border-white/10 bg-white/[0.035] px-3 py-2 text-sm leading-6 text-slate-300"
             >
-              {entry.speaker === "player" ? (
+              {entry.role === "player" ? (
                 <span className="mr-2 text-emerald-200">&gt;</span>
               ) : null}
-              {entry.text}
+              {entry.content}
             </div>
           ))}
       </div>

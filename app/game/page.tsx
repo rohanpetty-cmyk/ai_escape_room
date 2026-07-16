@@ -19,7 +19,6 @@ import { useAdventureStore } from "@/state/adventureStore";
 
 export default function GamePage() {
   const game = useAdventureStore((state) => state.game);
-  const progress = useAdventureStore((state) => state.progress);
   const resetGame = useAdventureStore((state) => state.resetGame);
   const submitCommand = useAdventureStore((state) => state.submitCommand);
   const requestCurrentHint = useAdventureStore((state) => state.requestCurrentHint);
@@ -30,9 +29,12 @@ export default function GamePage() {
     return () => window.clearTimeout(timeout);
   }, []);
 
-  const room = useMemo(() => getCurrentRoom(game, progress), [game, progress]);
-  const inventory = useMemo(() => getInventory(game, progress), [game, progress]);
-  const solved = isPuzzleSolved(room, progress);
+  const room = useMemo(() => getCurrentRoom(game), [game]);
+  const inventory = useMemo(() => getInventory(game), [game]);
+  const solved = isPuzzleSolved(room, game);
+  const victoryText =
+    game.narrativeHistory.at(-1)?.content ??
+    "The final exit opens and the escape room falls silent.";
 
   if (isBooting) {
     return <LoadingSequence />;
@@ -40,10 +42,10 @@ export default function GamePage() {
 
   return (
     <main className="min-h-screen bg-[#080b12] px-4 py-5 text-slate-100 sm:px-6 lg:px-8">
-      {progress.status === "escaped" ? (
+      {game.status === "escaped" ? (
         <VictoryScreen
           title={game.title}
-          text={game.victoryText}
+          text={victoryText}
           onReset={resetGame}
         />
       ) : null}
@@ -52,7 +54,7 @@ export default function GamePage() {
         <GameHeader
           title={game.title}
           currentRoomName={room.name}
-          solvedCount={progress.solvedPuzzleIds.length}
+          solvedCount={game.solvedPuzzleIds.length}
           totalRooms={game.rooms.length}
           onReset={resetGame}
         />
@@ -61,19 +63,24 @@ export default function GamePage() {
           <div className="grid gap-4">
             <RoomVisual room={room} />
             <CommandInput
-              disabled={progress.status === "escaped"}
+              disabled={game.status === "escaped"}
               onSubmit={submitCommand}
             />
-            <NarrativePanel entries={progress.narrative} />
+            <NarrativePanel entries={game.narrativeHistory} />
           </div>
 
           <aside className="grid content-start gap-4">
-            <ObjectivesPanel room={room} solved={solved} />
+            <ObjectivesPanel
+              objectives={game.objectives}
+              currentRoomId={room.id}
+              room={room}
+              solved={solved}
+            />
             <InventoryPanel items={inventory} />
             <HintPanel
               room={room}
-              usedHintCount={progress.usedHintsByPuzzleId[room.puzzle.id] ?? 0}
-              disabled={solved || progress.status === "escaped"}
+              usedHintCount={game.hintsUsed[room.puzzle.id] ?? 0}
+              disabled={solved || game.status === "escaped"}
               onRequestHint={requestCurrentHint}
             />
           </aside>

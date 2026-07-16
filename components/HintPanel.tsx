@@ -14,8 +14,8 @@ export function HintPanel({
   disabled,
   onRequestHint,
 }: HintPanelProps) {
-  const revealedHints = room.puzzle.hints.slice(0, usedHintCount);
-  const remaining = Math.max(room.puzzle.hints.length - usedHintCount, 0);
+  const revealedHints = room.puzzle.hintLevels.slice(0, usedHintCount);
+  const remaining = Math.max(room.puzzle.hintLevels.length - usedHintCount, 0);
 
   return (
     <section className="rounded-lg border border-white/10 bg-slate-950/80 p-4">

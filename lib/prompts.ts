@@ -1,4 +1,4 @@
-import type { GameDefinition } from "./types";
+import type { GameState } from "./types";
 
 export function buildGameGenerationPrompt(theme: string): string {
   return [
@@ -9,7 +9,7 @@ export function buildGameGenerationPrompt(theme: string): string {
   ].join("\n");
 }
 
-export function buildPlayerActionPrompt(command: string, game: GameDefinition): string {
+export function buildPlayerActionPrompt(command: string, game: GameState): string {
   return [
     "Map the player command to a structured action intent.",
     `Game: ${game.title}`,

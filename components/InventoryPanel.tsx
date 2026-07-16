@@ -19,7 +19,12 @@ export function InventoryPanel({ items }: InventoryPanelProps) {
               key={item.id}
               className="rounded-lg border border-emerald-300/15 bg-emerald-300/10 p-3"
             >
-              <div className="font-medium text-white">{item.name}</div>
+              <div className="flex items-center gap-2 font-medium text-white">
+                <span className="rounded border border-emerald-300/20 px-1.5 py-0.5 text-xs uppercase tracking-[0.14em] text-emerald-200">
+                  {item.icon}
+                </span>
+                {item.name}
+              </div>
               <p className="mt-1 text-sm leading-6 text-slate-300">
                 {item.description}
               </p>

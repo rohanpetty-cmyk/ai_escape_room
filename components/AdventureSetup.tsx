@@ -55,7 +55,9 @@ export function AdventureSetup() {
                     Room {index + 1}
                   </div>
                   <div className="mt-1 font-medium text-white">{room.name}</div>
-                  <p className="mt-1 text-sm text-slate-400">{room.objective}</p>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {sampleGame.objectives[index]?.text ?? room.puzzle.prompt}
+                  </p>
                 </div>
               ))}
             </div>

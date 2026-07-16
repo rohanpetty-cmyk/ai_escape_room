@@ -29,6 +29,6 @@ export async function POST(request: Request) {
     placeholder: true,
     message:
       "Hint API is scaffolded only. The current app reveals hints locally from the sample game.",
-    hints: puzzle.hints,
+    hints: puzzle.hintLevels,
   });
 }

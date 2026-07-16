@@ -7,20 +7,22 @@ import {
   type StateStorage,
 } from "zustand/middleware";
 import {
-  createInitialProgress,
+  applyGameEffects,
+  createInitialGame,
+  getCurrentRoom,
   requestHint,
+  recordHintUsed,
   runCommand,
 } from "@/lib/game-engine";
 import { sampleGame } from "@/lib/sample-game";
-import type { CommandResult, GameDefinition, GameProgress } from "@/lib/types";
+import type { GameState, PlayerActionResult } from "@/lib/types";
 
 interface AdventureStore {
-  game: GameDefinition;
-  progress: GameProgress;
-  lastResult?: CommandResult;
+  game: GameState;
+  lastResult?: PlayerActionResult;
   resetGame: () => void;
-  submitCommand: (command: string) => CommandResult;
-  requestCurrentHint: () => CommandResult;
+  submitCommand: (command: string) => PlayerActionResult;
+  requestCurrentHint: () => PlayerActionResult;
 }
 
 const fallbackStorage: StateStorage = {
@@ -32,36 +34,38 @@ const fallbackStorage: StateStorage = {
 export const useAdventureStore = create<AdventureStore>()(
   persist(
     (set, get) => ({
-      game: sampleGame,
-      progress: createInitialProgress(sampleGame),
+      game: createInitialGame(sampleGame),
       lastResult: undefined,
       resetGame: () =>
         set({
-          game: sampleGame,
-          progress: createInitialProgress(sampleGame),
+          game: createInitialGame(sampleGame),
           lastResult: undefined,
         }),
       submitCommand: (command) => {
-        const { game, progress } = get();
-        const commandResult = runCommand(game, progress, command);
+        const { game } = get();
+        const actionResult = runCommand(game, command);
 
         set({
-          progress: commandResult.progress,
-          lastResult: commandResult,
+          game: applyGameEffects(game, actionResult.effects),
+          lastResult: actionResult,
         });
 
-        return commandResult;
+        return actionResult;
       },
       requestCurrentHint: () => {
-        const { game, progress } = get();
-        const commandResult = requestHint(game, progress);
+        const { game } = get();
+        const room = getCurrentRoom(game);
+        const actionResult = requestHint(game);
+        const hintedGame = actionResult.valid
+          ? recordHintUsed(game, room.puzzle.id)
+          : game;
 
         set({
-          progress: commandResult.progress,
-          lastResult: commandResult,
+          game: applyGameEffects(hintedGame, actionResult.effects),
+          lastResult: actionResult,
         });
 
-        return commandResult;
+        return actionResult;
       },
     }),
     {
