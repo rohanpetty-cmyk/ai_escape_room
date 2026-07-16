@@ -49,3 +49,292 @@ button:disabled {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.room-visual {
+  isolation: isolate;
+}
+
+.room-visual-image {
+  animation: room-image-drift 14s ease-in-out infinite alternate;
+  transform: scale(1.04);
+}
+
+.room-visual-scanline {
+  animation: room-scanline 5.5s linear infinite;
+  opacity: 0.38;
+}
+
+.room-visual-sweep {
+  animation: room-sweep 7.2s ease-in-out infinite;
+  opacity: 0.55;
+}
+
+.room-visual-noise {
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size:
+    9px 9px,
+    13px 13px;
+  mix-blend-mode: screen;
+}
+
+.room-visual-particle {
+  position: absolute;
+  width: 72px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(167, 243, 208, 0.78), transparent);
+  opacity: 0;
+}
+
+.room-visual-particle-a {
+  left: 8%;
+  top: 28%;
+  animation: room-particle 5.8s ease-in-out infinite;
+}
+
+.room-visual-particle-b {
+  left: 56%;
+  top: 44%;
+  animation: room-particle 7.4s ease-in-out 1.2s infinite;
+}
+
+.room-visual-particle-c {
+  left: 22%;
+  top: 62%;
+  animation: room-particle 6.6s ease-in-out 2.1s infinite;
+}
+
+.room-visual-success {
+  animation: room-success-flash 1.2s ease-out;
+  border: 1px solid rgba(110, 231, 183, 0.5);
+}
+
+.room-visual-failure {
+  animation: room-failure-flash 0.75s ease-out;
+  border: 1px solid rgba(251, 113, 133, 0.55);
+}
+
+.action-feedback {
+  animation: action-feedback-in 280ms ease-out;
+}
+
+.inventory-reveal {
+  animation: inventory-reveal 1.55s ease-out;
+}
+
+.room-transition-door {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.72)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 44px);
+  box-shadow: inset 0 0 40px rgba(45, 212, 191, 0.12);
+}
+
+.room-transition-door-left {
+  left: 0;
+  border-right: 1px solid rgba(110, 231, 183, 0.28);
+  animation: transition-door-left 1.45s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+}
+
+.room-transition-door-right {
+  right: 0;
+  border-left: 1px solid rgba(110, 231, 183, 0.28);
+  animation: transition-door-right 1.45s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+}
+
+.room-transition-scan {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent, rgba(45, 212, 191, 0.18), transparent);
+  animation: transition-scan 1.6s ease-in-out forwards;
+}
+
+.animate-transition-load {
+  animation: transition-load 1.35s ease-out forwards;
+  transform-origin: left;
+}
+
+.animate-progress-sweep {
+  animation: progress-sweep 1.9s ease-in-out infinite;
+}
+
+@keyframes room-image-drift {
+  from {
+    transform: scale(1.04) translate3d(-8px, -4px, 0);
+  }
+
+  to {
+    transform: scale(1.08) translate3d(10px, 6px, 0);
+  }
+}
+
+@keyframes room-scanline {
+  from {
+    transform: translateY(-120%);
+  }
+
+  to {
+    transform: translateY(340%);
+  }
+}
+
+@keyframes room-sweep {
+  0%,
+  18% {
+    transform: translateX(-140%);
+  }
+
+  55%,
+  100% {
+    transform: translateX(920%);
+  }
+}
+
+@keyframes room-particle {
+  0%,
+  72%,
+  100% {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+
+  80%,
+  88% {
+    opacity: 0.85;
+  }
+
+  94% {
+    opacity: 0;
+    transform: translateX(96px);
+  }
+}
+
+@keyframes room-success-flash {
+  0% {
+    background: rgba(52, 211, 153, 0);
+  }
+
+  22% {
+    background: rgba(52, 211, 153, 0.22);
+  }
+
+  100% {
+    background: rgba(52, 211, 153, 0);
+  }
+}
+
+@keyframes room-failure-flash {
+  0%,
+  100% {
+    background: rgba(251, 113, 133, 0);
+    transform: translateX(0);
+  }
+
+  20% {
+    background: rgba(251, 113, 133, 0.2);
+    transform: translateX(-3px);
+  }
+
+  40% {
+    transform: translateX(3px);
+  }
+
+  60% {
+    transform: translateX(-2px);
+  }
+}
+
+@keyframes action-feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes inventory-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  28% {
+    opacity: 1;
+    transform: translateY(0) scale(1.02);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes transition-door-left {
+  0%,
+  26% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-105%);
+  }
+}
+
+@keyframes transition-door-right {
+  0%,
+  26% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(105%);
+  }
+}
+
+@keyframes transition-scan {
+  from {
+    transform: translateY(-100%);
+  }
+
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes transition-load {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes progress-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

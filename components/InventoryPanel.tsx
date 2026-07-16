@@ -3,9 +3,12 @@ import type { InventoryItem } from "@/lib/types";
 
 interface InventoryPanelProps {
   items: InventoryItem[];
+  newItemIds?: string[];
 }
 
-export function InventoryPanel({ items }: InventoryPanelProps) {
+export function InventoryPanel({ items, newItemIds = [] }: InventoryPanelProps) {
+  const newItems = new Set(newItemIds);
+
   return (
     <section className="rounded-lg border border-white/10 bg-slate-950/80 p-4">
       <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-emerald-200">
@@ -17,7 +20,11 @@ export function InventoryPanel({ items }: InventoryPanelProps) {
           items.map((item) => (
             <div
               key={item.id}
-              className="rounded-lg border border-emerald-300/15 bg-emerald-300/10 p-3"
+              className={`rounded-lg border bg-emerald-300/10 p-3 transition ${
+                newItems.has(item.id)
+                  ? "inventory-reveal border-emerald-200/70 shadow-[0_0_26px_rgba(52,211,153,0.25)]"
+                  : "border-emerald-300/15"
+              }`}
             >
               <div className="flex items-center gap-2 font-medium text-white">
                 <span className="rounded border border-emerald-300/20 px-1.5 py-0.5 text-xs uppercase tracking-[0.14em] text-emerald-200">

@@ -1,7 +1,9 @@
 import type { Room } from "@/lib/types";
+import type { ActionFeedbackTone } from "@/components/ActionFeedback";
 
 interface RoomVisualProps {
   room: Room;
+  feedbackTone?: ActionFeedbackTone | null;
 }
 
 const toneClassByRoomTone: Record<Room["visualTheme"], string> = {
@@ -16,12 +18,22 @@ const imageByRoomTone: Record<Room["visualTheme"], string> = {
   purple: "/rooms/purple-exit.svg",
 };
 
-export function RoomVisual({ room }: RoomVisualProps) {
+const feedbackClass: Record<ActionFeedbackTone, string> = {
+  success: "border-emerald-300/60 shadow-[0_0_38px_rgba(52,211,153,0.25)]",
+  failure: "border-rose-300/60 shadow-[0_0_38px_rgba(251,113,133,0.22)]",
+  neutral: "border-teal-300/50 shadow-[0_0_34px_rgba(45,212,191,0.2)]",
+};
+
+export function RoomVisual({ room, feedbackTone }: RoomVisualProps) {
   return (
-    <section className="relative min-h-[320px] overflow-hidden rounded-lg border border-white/10 bg-slate-950 shadow-2xl shadow-black/30">
+    <section
+      className={`room-visual relative min-h-[320px] overflow-hidden rounded-lg border bg-slate-950 shadow-2xl shadow-black/30 transition ${
+        feedbackTone ? feedbackClass[feedbackTone] : "border-white/10"
+      }`}
+    >
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-cover bg-center opacity-80"
+        className="room-visual-image absolute inset-0 bg-cover bg-center opacity-80"
         style={{ backgroundImage: `url(${imageByRoomTone[room.visualTheme]})` }}
       />
       <div
@@ -29,6 +41,18 @@ export function RoomVisual({ room }: RoomVisualProps) {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:44px_44px] opacity-20" />
+      <div className="room-visual-scanline absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+      <div className="room-visual-sweep absolute inset-y-0 w-28 bg-gradient-to-r from-transparent via-emerald-200/10 to-transparent" />
+      <div className="room-visual-noise absolute inset-0 opacity-35" />
+      <div className="room-visual-particle room-visual-particle-a" />
+      <div className="room-visual-particle room-visual-particle-b" />
+      <div className="room-visual-particle room-visual-particle-c" />
+      {feedbackTone === "success" ? (
+        <div className="room-visual-success absolute inset-0" />
+      ) : null}
+      {feedbackTone === "failure" ? (
+        <div className="room-visual-failure absolute inset-0" />
+      ) : null}
       <div className="relative flex min-h-[320px] flex-col justify-end p-6">
         <p className="text-sm uppercase tracking-[0.22em] text-emerald-100">
           {room.visualTheme} sector
