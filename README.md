@@ -16,25 +16,31 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-The app runs immediately with a static sample escape room. Claude is installed
-and scaffolded, but it is intentionally not connected yet.
+The app runs immediately with a static sample escape room. The generation route
+can call Claude when configured, and otherwise stays demo-ready with the static
+fallback.
 
-## Claude Setup Later
+## Claude Setup
 
-The current scaffold does not call Claude. When generation is connected later,
-use:
+Game generation can call Claude from the server-side API route. Keep these
+values in your local environment, not in client code:
 
 ```bash
 ANTHROPIC_API_KEY=your_claude_key
+CLAUDE_MODEL=claude-sonnet-4-5-20250929
 ```
+
+If Claude is not configured or returns invalid JSON, the API returns the static
+sample or demo game as a fallback.
 
 ## Architecture
 
 - `lib/game-engine.ts` owns deterministic state changes.
 - `lib/sample-game.ts` provides the static playable escape room.
-- `lib/schemas.ts` defines Zod contracts for future AI-generated JSON.
-- `lib/claude.ts` confirms the Claude SDK is installed but not connected.
-- `app/api/generate-game/route.ts` is a generation placeholder.
+- `lib/schemas.ts` defines Zod contracts for AI-generated JSON.
+- `lib/claude.ts` calls Claude, parses JSON, and validates generated games.
+- `app/api/generate-game/route.ts` validates generation requests and returns
+  Claude output or a static fallback.
 - `app/api/player-action/route.ts` is a player-action placeholder.
 - `app/api/hint/route.ts` is a hint placeholder.
 - `state/adventureStore.ts` stores and refresh-recovers local game progress.
