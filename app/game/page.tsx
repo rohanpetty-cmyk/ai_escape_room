@@ -16,6 +16,7 @@ import { ProgressMap } from "@/components/ProgressMap";
 import { ObjectivesPanel } from "@/components/ObjectivesPanel";
 import { RoomVisual } from "@/components/RoomVisual";
 import { RoomTransitionOverlay } from "@/components/RoomTransitionOverlay";
+import { ThemeArtifact } from "@/components/ThemeArtifact";
 import { VictoryScreen } from "@/components/VictoryScreen";
 import {
   getCurrentRoom,
@@ -216,6 +217,13 @@ export default function GamePage() {
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="grid gap-4">
             <RoomVisual room={room} feedbackTone={feedback?.tone ?? null} />
+            <ThemeArtifact
+              room={room}
+              theme={game.theme}
+              discoveredClueIds={game.discoveredClueIds}
+              inventory={inventory}
+              solved={solved}
+            />
             <ActionFeedback feedback={feedback} />
             <CommandInput
               disabled={game.status === "escaped"}

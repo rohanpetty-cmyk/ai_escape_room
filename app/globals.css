@@ -162,6 +162,43 @@ button:disabled {
   animation: progress-sweep 1.9s ease-in-out infinite;
 }
 
+.theme-artifact {
+  isolation: isolate;
+}
+
+.theme-artifact::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background:
+    radial-gradient(circle at 18% 16%, rgba(110, 231, 183, 0.12), transparent 26%),
+    radial-gradient(circle at 82% 10%, rgba(216, 180, 254, 0.1), transparent 24%);
+  opacity: 0.8;
+}
+
+.theme-artifact-scan {
+  animation: artifact-scan 4.8s linear infinite;
+  opacity: 0.36;
+}
+
+.theme-artifact-blink {
+  animation: artifact-blink 1.2s step-end infinite;
+}
+
+.theme-artifact-lock {
+  animation: artifact-lock-pulse 2.7s ease-in-out infinite;
+}
+
+.theme-artifact-card {
+  animation: artifact-card-in 360ms ease-out both;
+}
+
+.theme-artifact-meter {
+  animation: artifact-meter-rise 700ms ease-out both;
+  transform-origin: bottom;
+}
+
 @keyframes room-image-drift {
   from {
     transform: scale(1.04) translate3d(-8px, -4px, 0);
@@ -326,6 +363,63 @@ button:disabled {
 
   to {
     transform: translateX(100%);
+  }
+}
+
+@keyframes artifact-scan {
+  from {
+    transform: translateY(-120%);
+  }
+
+  to {
+    transform: translateY(420%);
+  }
+}
+
+@keyframes artifact-blink {
+  0%,
+  42% {
+    opacity: 1;
+  }
+
+  43%,
+  100% {
+    opacity: 0.22;
+  }
+}
+
+@keyframes artifact-lock-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(45, 212, 191, 0);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 34px rgba(45, 212, 191, 0.18);
+    transform: scale(1.018);
+  }
+}
+
+@keyframes artifact-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes artifact-meter-rise {
+  from {
+    transform: scaleY(0.16);
+  }
+
+  to {
+    transform: scaleY(1);
   }
 }
 
