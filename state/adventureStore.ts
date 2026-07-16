@@ -14,12 +14,14 @@ import {
   recordHintUsed,
   runCommand,
 } from "@/lib/game-engine";
-import { sampleGame } from "@/lib/sample-game";
+import { demoGame, sampleGame } from "@/lib/sample-game";
 import type { GameState, PlayerActionResult } from "@/lib/types";
 
 interface AdventureStore {
   game: GameState;
   lastResult?: PlayerActionResult;
+  startSampleGame: () => void;
+  startDemoGame: () => void;
   resetGame: () => void;
   submitCommand: (command: string) => PlayerActionResult;
   requestCurrentHint: () => PlayerActionResult;
@@ -36,17 +38,33 @@ export const useAdventureStore = create<AdventureStore>()(
     (set, get) => ({
       game: createInitialGame(sampleGame),
       lastResult: undefined,
-      resetGame: () =>
+      startSampleGame: () =>
         set({
           game: createInitialGame(sampleGame),
           lastResult: undefined,
         }),
+      startDemoGame: () =>
+        set({
+          game: createInitialGame(demoGame),
+          lastResult: undefined,
+        }),
+      resetGame: () =>
+        set((state) => ({
+          game: createInitialGame(state.game.demoMode ? demoGame : sampleGame),
+          lastResult: undefined,
+        })),
       submitCommand: (command) => {
         const { game } = get();
         const actionResult = runCommand(game, command);
+        const hintedGame =
+          actionResult.intent === "REQUEST_HINT" &&
+          actionResult.valid &&
+          actionResult.targetId
+            ? recordHintUsed(game, actionResult.targetId)
+            : game;
 
         set({
-          game: applyGameEffects(game, actionResult.effects),
+          game: applyGameEffects(hintedGame, actionResult.effects),
           lastResult: actionResult,
         });
 
@@ -69,7 +87,7 @@ export const useAdventureStore = create<AdventureStore>()(
       },
     }),
     {
-      name: "ai-escape-room-adventure",
+      name: "ai-escape-room-lab-adventure",
       storage: createJSONStorage(() =>
         typeof window === "undefined" ? fallbackStorage : window.localStorage,
       ),

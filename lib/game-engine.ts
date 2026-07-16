@@ -178,7 +178,7 @@ export function runCommand(game: GameState, command: string): PlayerActionResult
     "UNKNOWN",
     null,
     false,
-    "Try commands like: inspect diagnostic screen, take calibration lens, answer signal, or go east.",
+    "Try commands like: inspect status wall, take admin badge, answer A17, request hint, or go east.",
     [playerEffect],
   );
 }
@@ -493,7 +493,7 @@ function movePlayer(
       "MOVE",
       exit.id,
       true,
-      "The airlock irises open. Cold night air rushes in, the lab falls silent, and the Greenlight Protocol fades from every screen.",
+      "The emergency hatch opens. Clean air rushes in as the autonomous AI loses its final physical lock on the lab.",
       [
         playerEffect,
         {
@@ -557,8 +557,18 @@ function itemFromObject(object: RoomObject): InventoryItem {
     id: object.collectibleItemId ?? object.id,
     name: object.name,
     description: object.description,
-    icon: "box",
+    icon: iconForItem(object.collectibleItemId ?? object.id),
   };
+}
+
+function iconForItem(itemId: string) {
+  if (itemId.includes("badge")) return "badge";
+  if (itemId.includes("screwdriver")) return "tool";
+  if (itemId.includes("cable")) return "cable";
+  if (itemId.includes("coolant")) return "snow";
+  if (itemId.includes("card")) return "card";
+
+  return "box";
 }
 
 function getInventoryEffect(
@@ -620,5 +630,9 @@ function getMissingItemMessage(game: GameState, object: RoomObject) {
     return null;
   }
 
-  return `You need ${object.requiredItemId} before that object makes sense.`;
+  return `You need ${formatItemName(object.requiredItemId)} before that object makes sense.`;
+}
+
+function formatItemName(itemId: string) {
+  return itemId.replaceAll("-", " ");
 }

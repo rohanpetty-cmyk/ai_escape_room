@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sampleGame } from "@/lib/sample-game";
+import { demoGame, sampleGame } from "@/lib/sample-game";
 import { hintRequestSchema } from "@/lib/schemas";
 
 export async function POST(request: Request) {
@@ -13,9 +13,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const room = sampleGame.rooms.find(
-    (candidate) => candidate.id === parsed.data.roomId,
-  );
+  const room = [sampleGame, demoGame]
+    .flatMap((game) => game.rooms)
+    .find((candidate) => candidate.id === parsed.data.roomId);
   const puzzle = room?.puzzle.id === parsed.data.puzzleId ? room.puzzle : null;
 
   if (!puzzle) {

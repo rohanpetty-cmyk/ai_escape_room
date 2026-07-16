@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getClaudePlaceholderStatus } from "@/lib/claude";
 import { buildGameGenerationPrompt } from "@/lib/prompts";
-import { sampleGame } from "@/lib/sample-game";
+import { demoGame, sampleGame } from "@/lib/sample-game";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       claude: getClaudePlaceholderStatus(),
       promptPreview: buildGameGenerationPrompt(theme),
       sampleGame,
+      demoGame,
     },
     { status: 501 },
   );

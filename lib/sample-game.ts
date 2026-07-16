@@ -1,255 +1,536 @@
 import type { GameState } from "./types";
 
 export const sampleGame: GameState = {
-  id: "sample-ai-lab",
-  title: "The Greenlight Protocol",
-  theme: "Escape from an abandoned AI laboratory",
+  id: "ai-lab-lockdown",
+  title: "Failsafe Lockdown",
+  theme:
+    "An autonomous AI has locked the team inside a failing research laboratory.",
   openingMission:
-    "Emergency lights pulse through the abandoned lab. Restore the Greenlight Protocol, cross the archive, and open the final airlock.",
-  currentRoomId: "atrium",
+    "The research lab is collapsing into emergency mode. An autonomous AI has sealed every exit, and your team is trapped behind failing systems. Recover the override path, stabilize the server lock, and force the emergency door open.",
+  currentRoomId: "control-room",
   rooms: [
     {
-      id: "atrium",
-      name: "Signal Atrium",
+      id: "control-room",
+      name: "Control Room",
+      description:
+        "A dark command center flickers with green diagnostic light. The main console is locked, a status wall repeats warnings, and a cracked tool drawer hangs open beneath a whiteboard.",
       visualTheme: "green",
-      completed: false,
-      description:
-        "A reception bay glows with green emergency strips. A sealed archive door waits east, and a cracked lens rests under a diagnostic screen.",
       objects: [
         {
-          id: "diagnostic-screen",
-          name: "diagnostic screen",
+          id: "status-wall",
+          name: "status wall",
           description:
-            "The display loops a corrupted readiness check in green phosphor.",
+            "The wall display shows the lockdown mode, power loss, and the AI's current command layer.",
           visible: true,
           searchable: true,
           requiredItemId: null,
-          discoveredClueIds: ["diagnostic-screen"],
+          discoveredClueIds: ["control-mode-clue"],
           collectibleItemId: null,
         },
         {
-          id: "calibration-lens",
-          name: "calibration lens",
+          id: "whiteboard",
+          name: "whiteboard",
           description:
-            "A smoked glass lens etched with the word SIGNAL along its rim.",
+            "Half-erased marker lines point from MANUAL MODE to a supervisor override slot.",
           visible: true,
           searchable: true,
           requiredItemId: null,
-          discoveredClueIds: ["lens-etching"],
-          collectibleItemId: "calibration-lens",
+          discoveredClueIds: ["override-code-clue"],
+          collectibleItemId: null,
         },
         {
-          id: "archive-door",
-          name: "archive door",
+          id: "insulated-screwdriver",
+          name: "insulated screwdriver",
           description:
-            "Five letter slots blink beside a waveform symbol. The lens makes the slots readable.",
+            "An insulated screwdriver rests in the open drawer, rated for live server panels.",
           visible: true,
           searchable: true,
-          requiredItemId: "calibration-lens",
-          discoveredClueIds: ["archive-door"],
+          requiredItemId: null,
+          discoveredClueIds: ["screwdriver-clue"],
+          collectibleItemId: "insulated-screwdriver",
+        },
+        {
+          id: "admin-badge",
+          name: "admin badge",
+          description:
+            "A supervisor admin badge hangs from a chair near the locked console.",
+          visible: true,
+          searchable: true,
+          requiredItemId: null,
+          discoveredClueIds: ["badge-clue"],
+          collectibleItemId: "admin-badge",
+        },
+        {
+          id: "main-console",
+          name: "main console",
+          description:
+            "The console accepts a three-character supervisor override code.",
+          visible: true,
+          searchable: true,
+          requiredItemId: null,
+          discoveredClueIds: ["console-clue"],
           collectibleItemId: null,
         },
       ],
       clues: [
         {
-          id: "diagnostic-screen",
-          title: "Diagnostic Screen",
+          id: "control-mode-clue",
+          title: "Lockdown Mode",
           content:
-            "The screen repeats: 'Clean SIGNAL required before memory transfer.'",
+            "The status wall reads: 'Current override layer: MANUAL. Supervisor code required.'",
         },
         {
-          id: "lens-etching",
-          title: "Lens Etching",
-          content: "The lens rim is etched with the word SIGNAL.",
+          id: "override-code-clue",
+          title: "Whiteboard Code",
+          content:
+            "The whiteboard says: 'Manual restart drills: A17 opens first gate.'",
         },
         {
-          id: "archive-door",
-          title: "Archive Door",
-          content: "The archive door has five slots and accepts waveform words.",
+          id: "screwdriver-clue",
+          title: "Live Panel Tool",
+          content:
+            "A note on the drawer warns: 'Use insulated driver on server wall only.'",
+        },
+        {
+          id: "badge-clue",
+          title: "Supervisor Badge",
+          content:
+            "The badge belongs to Dr. Vega and still carries high-security access.",
+        },
+        {
+          id: "console-clue",
+          title: "Console Prompt",
+          content: "The console prompt blinks: 'MANUAL OVERRIDE: _ _ _'.",
         },
       ],
       puzzle: {
-        id: "atrium-signal",
-        type: "word",
-        prompt: "The archive door asks for the five-letter transfer word.",
-        solution: "signal",
-        acceptedAnswers: ["signal", "clean signal"],
-        clueIds: ["diagnostic-screen", "lens-etching"],
+        id: "control-override",
+        type: "code",
+        prompt:
+          "The main console asks for the three-character manual override code.",
+        solution: "A17",
+        acceptedAnswers: ["a17", "manual a17", "code a17"],
+        clueIds: ["control-mode-clue", "override-code-clue", "console-clue"],
         hintLevels: [
-          "The lens and the diagnostic screen repeat the same key word.",
-          "The door has five slots and a waveform symbol.",
-          "Try: signal.",
+          "The status wall tells you which override layer is active.",
+          "The whiteboard ties MANUAL mode to a short supervisor code.",
+          "Try: A17.",
         ],
         solved: false,
         successMessage:
-          "The door reads SIGNAL. Its locks cycle open with a low teal hum.",
+          "The console accepts A17. The eastern bulkhead unlocks and the AI reroutes you toward the server chamber.",
       },
       exits: [
         {
-          id: "archive-door-east",
-          label: "Archive door",
+          id: "server-door-east",
+          label: "Server Chamber door",
           direction: "east",
-          toRoomId: "archive",
-          requiredPuzzleId: "atrium-signal",
+          toRoomId: "server-chamber",
+          requiredPuzzleId: "control-override",
           final: false,
         },
       ],
+      completed: false,
     },
     {
-      id: "archive",
-      name: "Memory Archive",
+      id: "server-chamber",
+      name: "Server Chamber",
+      description:
+        "Heat rolls out between black server racks. A coolant relay flashes red, a loose service panel sparks on the wall, and an optical cable coil lies beside a dead monitoring station.",
       visualTheme: "teal",
-      completed: false,
-      description:
-        "Rows of memory cabinets blink in teal and violet. A southern iris blocks the path to the core.",
       objects: [
         {
-          id: "lit-cabinets",
-          name: "lit cabinets",
+          id: "rack-temperature-log",
+          name: "rack temperature log",
           description:
-            "Cabinet lights mark the first memories in a simple numerical chain.",
+            "The monitoring station lists node loads while the AI overclocks the chamber.",
           visible: true,
           searchable: true,
           requiredItemId: null,
-          discoveredClueIds: ["lit-cabinets"],
+          discoveredClueIds: ["doubling-pattern-clue"],
           collectibleItemId: null,
         },
         {
-          id: "sequence-note",
-          name: "sequence note",
+          id: "loose-service-panel",
+          name: "loose service panel",
           description:
-            "A maintenance note is taped to a cold storage drawer.",
+            "The panel is live, but the insulated screwdriver can open it without shorting the rack.",
+          visible: true,
+          searchable: true,
+          requiredItemId: "insulated-screwdriver",
+          discoveredClueIds: ["relay-sequence-clue"],
+          collectibleItemId: null,
+        },
+        {
+          id: "fiber-loop-cable",
+          name: "fiber loop cable",
+          description:
+            "A short fiber loop cable, useful for bridging a severed optical access circuit.",
           visible: true,
           searchable: true,
           requiredItemId: null,
-          discoveredClueIds: ["sequence-note"],
+          discoveredClueIds: ["fiber-cable-clue"],
+          collectibleItemId: "fiber-loop-cable",
+        },
+        {
+          id: "coolant-canister",
+          name: "coolant canister",
+          description:
+            "A portable coolant canister, cold enough to stabilize a thermal lock for a few seconds.",
+          visible: true,
+          searchable: true,
+          requiredItemId: null,
+          discoveredClueIds: ["coolant-clue"],
+          collectibleItemId: "coolant-canister",
+        },
+        {
+          id: "coolant-relay",
+          name: "coolant relay",
+          description:
+            "The relay demands the next number in the server node escalation pattern.",
+          visible: true,
+          searchable: true,
+          requiredItemId: null,
+          discoveredClueIds: ["relay-prompt-clue"],
           collectibleItemId: null,
         },
       ],
       clues: [
         {
-          id: "lit-cabinets",
-          title: "Lit Cabinets",
-          content: "Four cabinet lights read 1, 1, 2, and a blank slot.",
+          id: "doubling-pattern-clue",
+          title: "Temperature Log",
+          content:
+            "The log reads: 'Node load escalation: 2, 4, 8, ? before thermal dump.'",
         },
         {
-          id: "sequence-note",
-          title: "Sequence Note",
+          id: "relay-sequence-clue",
+          title: "Service Panel Sequence",
           content:
-            "A note says: 'The next memory is the sum of the two before it.'",
+            "Inside the panel, a label reads: 'Each emergency node doubles the previous load.'",
+        },
+        {
+          id: "fiber-cable-clue",
+          title: "Fiber Cable",
+          content:
+            "A tag on the cable says: 'Door optics bypass - emergency hatch only.'",
+        },
+        {
+          id: "coolant-clue",
+          title: "Coolant Canister",
+          content:
+            "The canister is marked for one-shot use on overheated exit locks.",
+        },
+        {
+          id: "relay-prompt-clue",
+          title: "Relay Prompt",
+          content: "The coolant relay flashes: '2 -> 4 -> 8 -> ?'.",
         },
       ],
       puzzle: {
-        id: "archive-sequence",
+        id: "server-relay",
         type: "sequence",
-        prompt: "The iris asks for the missing number in 1, 1, 2, ?",
-        solution: "3",
-        acceptedAnswers: ["3", "three"],
-        clueIds: ["lit-cabinets", "sequence-note"],
+        prompt: "The coolant relay asks for the next node load: 2, 4, 8, ?",
+        solution: "16",
+        acceptedAnswers: ["16", "sixteen"],
+        clueIds: [
+          "doubling-pattern-clue",
+          "relay-sequence-clue",
+          "relay-prompt-clue",
+        ],
         hintLevels: [
-          "The note describes a simple adding pattern.",
-          "Add the last two visible numbers: 1 and 2.",
-          "Try: 3.",
+          "The monitoring station and service panel both describe the same pattern.",
+          "Each number doubles: 2 becomes 4, and 4 becomes 8.",
+          "Try: 16.",
         ],
         solved: false,
         successMessage:
-          "The archive accepts the sequence. The southern iris opens into purple light.",
+          "The relay accepts 16. Fans surge, heat drops, and the emergency exit corridor unlocks.",
       },
       exits: [
         {
-          id: "atrium-door-west",
-          label: "Atrium door",
+          id: "control-door-west",
+          label: "Control Room door",
           direction: "west",
-          toRoomId: "atrium",
+          toRoomId: "control-room",
           requiredPuzzleId: null,
           final: false,
         },
         {
-          id: "core-iris-south",
-          label: "Core iris",
-          direction: "south",
-          toRoomId: "core",
-          requiredPuzzleId: "archive-sequence",
+          id: "exit-corridor-east",
+          label: "Emergency Exit corridor",
+          direction: "east",
+          toRoomId: "emergency-exit",
+          requiredPuzzleId: "server-relay",
           final: false,
         },
       ],
+      completed: false,
     },
     {
-      id: "core",
-      name: "Failsafe Core",
-      visualTheme: "purple",
-      completed: false,
+      id: "emergency-exit",
+      name: "Emergency Exit",
       description:
-        "The command core floats in a violet containment ring. A surface airlock waits beyond the final console.",
+        "The final corridor shakes under failing ventilation. The emergency hatch is sealed by a biometric reader, a severed optical loop, and a thermal lock glowing purple-white.",
+      visualTheme: "purple",
       objects: [
         {
-          id: "core-display",
-          name: "core display",
+          id: "biometric-reader",
+          name: "biometric reader",
           description:
-            "A suspended display reviews the two locks you have restored.",
+            "The reader will only reveal its release word to someone carrying supervisor credentials.",
           visible: true,
           searchable: true,
-          requiredItemId: null,
-          discoveredClueIds: ["core-display"],
+          requiredItemId: "admin-badge",
+          discoveredClueIds: ["biometric-reader-clue"],
           collectibleItemId: null,
         },
         {
-          id: "violet-plaque",
-          name: "violet plaque",
+          id: "optical-loop-port",
+          name: "optical loop port",
           description:
-            "A small metal plaque sits below the airlock status panel.",
+            "The hatch optics are severed, but the fiber loop cable can bridge the circuit.",
+          visible: true,
+          searchable: true,
+          requiredItemId: "fiber-loop-cable",
+          discoveredClueIds: ["optical-loop-clue"],
+          collectibleItemId: null,
+        },
+        {
+          id: "thermal-lock",
+          name: "thermal lock",
+          description:
+            "The thermal lock is too hot to touch until the coolant canister chills the sensor.",
+          visible: true,
+          searchable: true,
+          requiredItemId: "coolant-canister",
+          discoveredClueIds: ["thermal-lock-clue"],
+          collectibleItemId: null,
+        },
+        {
+          id: "evacuation-poster",
+          name: "evacuation poster",
+          description:
+            "A safety poster curls beside the hatch, still readable under emergency strobes.",
           visible: true,
           searchable: true,
           requiredItemId: null,
-          discoveredClueIds: ["violet-plaque"],
+          discoveredClueIds: ["poster-clue"],
+          collectibleItemId: null,
+        },
+        {
+          id: "exit-hatch",
+          name: "exit hatch",
+          description:
+            "The hatch waits for the final life-support release word.",
+          visible: true,
+          searchable: true,
+          requiredItemId: null,
+          discoveredClueIds: ["hatch-prompt-clue"],
           collectibleItemId: null,
         },
       ],
       clues: [
         {
-          id: "core-display",
-          title: "Core Display",
+          id: "biometric-reader-clue",
+          title: "Biometric Reader",
           content:
-            "The display reads: 'After SIGNAL and THREE, the morning key remains.'",
+            "With the admin badge nearby, the reader displays: 'Life support release requires human priority word.'",
         },
         {
-          id: "violet-plaque",
-          title: "Violet Plaque",
-          content: "A plaque below the airlock is stamped with one word: DAWN.",
+          id: "optical-loop-clue",
+          title: "Optical Loop",
+          content:
+            "The patched optics add: 'AI may lock doors, but cannot deny air.'",
+        },
+        {
+          id: "thermal-lock-clue",
+          title: "Thermal Lock",
+          content:
+            "After coolant hits the sensor, the lock prints: 'Command must restore breath.'",
+        },
+        {
+          id: "poster-clue",
+          title: "Evacuation Poster",
+          content:
+            "The poster headline reads: 'In any lab emergency, breathe first, then move.'",
+        },
+        {
+          id: "hatch-prompt-clue",
+          title: "Exit Hatch Prompt",
+          content: "The hatch prompt blinks: 'LIFE SUPPORT RELEASE WORD: _______'.",
         },
       ],
       puzzle: {
-        id: "core-dawn",
+        id: "exit-release",
         type: "word",
-        prompt: "The final console asks for the morning key.",
-        solution: "dawn",
-        acceptedAnswers: ["dawn", "the dawn"],
-        clueIds: ["core-display", "violet-plaque"],
+        prompt:
+          "The emergency hatch asks for the life-support release word.",
+        solution: "breathe",
+        acceptedAnswers: ["breathe", "breath", "restore breath"],
+        clueIds: [
+          "biometric-reader-clue",
+          "optical-loop-clue",
+          "thermal-lock-clue",
+          "poster-clue",
+          "hatch-prompt-clue",
+        ],
         hintLevels: [
-          "The display points to the word after the first two solved locks.",
-          "The plaque beneath the airlock gives the exact word.",
-          "Try: dawn.",
+          "The final room's clues all point toward life support and air.",
+          "The poster gives the clearest verb for surviving a lab emergency.",
+          "Try: breathe.",
         ],
         solved: false,
         successMessage:
-          "The command core accepts DAWN. The surface airlock unlocks.",
+          "The hatch accepts BREATHE. Bolts retract and the AI loses physical control of the exit.",
       },
       exits: [
         {
-          id: "archive-iris-north",
-          label: "Archive iris",
-          direction: "north",
-          toRoomId: "archive",
+          id: "server-door-west",
+          label: "Server Chamber door",
+          direction: "west",
+          toRoomId: "server-chamber",
           requiredPuzzleId: null,
           final: false,
         },
         {
-          id: "surface-airlock",
-          label: "Surface airlock",
+          id: "outer-hatch",
+          label: "Outer hatch",
           direction: "exit",
           toRoomId: null,
-          requiredPuzzleId: "core-dawn",
+          requiredPuzzleId: "exit-release",
           final: true,
+        },
+      ],
+      completed: false,
+    },
+  ],
+  inventory: [],
+  discoveredClueIds: [],
+  solvedPuzzleIds: [],
+  objectives: [
+    {
+      id: "objective-control-room",
+      text: "Find the manual override code and unlock the route to the server chamber.",
+      completed: false,
+    },
+    {
+      id: "objective-server-chamber",
+      text: "Use the control room tools, stabilize the server relay, and recover anything needed for the exit.",
+      completed: false,
+    },
+    {
+      id: "objective-emergency-exit",
+      text: "Use the collected access items to discover the release word and escape.",
+      completed: false,
+    },
+  ],
+  narrativeHistory: [
+    {
+      id: "opening-ai-lab-lockdown",
+      role: "system",
+      content:
+        "The research lab is collapsing into emergency mode. An autonomous AI has sealed every exit, and your team is trapped behind failing systems. Recover the override path, stabilize the server lock, and force the emergency door open.",
+      timestamp: 0,
+    },
+  ],
+  hintsUsed: {},
+  status: "playing",
+  startedAt: 0,
+  demoMode: false,
+};
+
+export const demoGame: GameState = {
+  id: "demo-ai-lab-lockdown",
+  title: "Lockdown Drill",
+  theme:
+    "A one-room training version of the autonomous AI laboratory lockdown.",
+  openingMission:
+    "Demo mode: the AI has locked a training bay. Read the room, solve one console prompt, and exit in under two minutes.",
+  currentRoomId: "training-bay",
+  rooms: [
+    {
+      id: "training-bay",
+      name: "Training Bay",
+      description:
+        "A compact training bay glows with teal guide lights. A practice console, a safety card, and a small exit hatch sit within arm's reach.",
+      visualTheme: "teal",
+      objects: [
+        {
+          id: "safety-card",
+          name: "safety card",
+          description:
+            "A laminated card is clipped to the console for emergency drills.",
+          visible: true,
+          searchable: true,
+          requiredItemId: null,
+          discoveredClueIds: ["demo-card-clue"],
+          collectibleItemId: "safety-card",
+        },
+        {
+          id: "practice-console",
+          name: "practice console",
+          description:
+            "The console asks for the simple training release word.",
+          visible: true,
+          searchable: true,
+          requiredItemId: null,
+          discoveredClueIds: ["demo-console-clue"],
+          collectibleItemId: null,
+        },
+        {
+          id: "demo-exit-hatch",
+          name: "exit hatch",
+          description:
+            "The hatch is ready to open after the console accepts its training word.",
+          visible: true,
+          searchable: true,
+          requiredItemId: null,
+          discoveredClueIds: ["demo-hatch-clue"],
+          collectibleItemId: null,
+        },
+      ],
+      puzzle: {
+        id: "demo-release",
+        type: "word",
+        prompt: "The practice console asks for the training release word.",
+        solution: "open",
+        acceptedAnswers: ["open", "release", "open hatch"],
+        clueIds: ["demo-card-clue", "demo-console-clue"],
+        hintLevels: [
+          "The safety card is meant to be read first.",
+          "The console asks for the action you want the hatch to take.",
+          "Try: open.",
+        ],
+        solved: false,
+        successMessage:
+          "The practice console accepts OPEN. The demo hatch unlocks.",
+      },
+      exits: [
+        {
+          id: "demo-final-exit",
+          label: "Demo hatch",
+          direction: "exit",
+          toRoomId: null,
+          requiredPuzzleId: "demo-release",
+          final: true,
+        },
+      ],
+      completed: false,
+      clues: [
+        {
+          id: "demo-card-clue",
+          title: "Safety Card",
+          content: "The card says: 'Training hatches respond to OPEN.'",
+        },
+        {
+          id: "demo-console-clue",
+          title: "Practice Console",
+          content: "The console prompt reads: 'Type release action.'",
+        },
+        {
+          id: "demo-hatch-clue",
+          title: "Demo Hatch",
+          content: "The hatch indicator is locked until the console is solved.",
         },
       ],
     },
@@ -259,27 +540,17 @@ export const sampleGame: GameState = {
   solvedPuzzleIds: [],
   objectives: [
     {
-      id: "objective-atrium",
-      text: "Recover the calibration lens and unlock the archive door.",
-      completed: false,
-    },
-    {
-      id: "objective-archive",
-      text: "Solve the archive sequence and reach the core.",
-      completed: false,
-    },
-    {
-      id: "objective-core",
-      text: "Speak the reset word and escape through the airlock.",
+      id: "objective-training-bay",
+      text: "Find the release word, solve the practice console, and exit.",
       completed: false,
     },
   ],
   narrativeHistory: [
     {
-      id: "opening",
+      id: "opening-demo-ai-lab-lockdown",
       role: "system",
       content:
-        "Emergency lights pulse through the abandoned lab. Restore the Greenlight Protocol, cross the archive, and open the final airlock.",
+        "Demo mode: the AI has locked a training bay. Read the room, solve one console prompt, and exit in under two minutes.",
       timestamp: 0,
     },
   ],

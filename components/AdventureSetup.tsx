@@ -1,5 +1,5 @@
 import { Cpu, Play, Sparkles } from "lucide-react";
-import { sampleGame } from "@/lib/sample-game";
+import { demoGame, sampleGame } from "@/lib/sample-game";
 
 export function AdventureSetup() {
   return (
@@ -14,20 +14,28 @@ export function AdventureSetup() {
             AI Escape Room
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            Enter a cinematic lab escape built from a static sample game. Claude
-            hooks are scaffolded but intentionally not connected yet.
+            Enter a cinematic lab escape built from static rooms, deterministic
+            rules, and fair clues. Claude hooks are scaffolded but intentionally
+            not connected yet.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
-              href="/game"
+              href="/game?mode=sample"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-emerald-300 px-5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-200"
             >
               <Play className="h-4 w-4" />
-              Start sample game
+              Start sample adventure
+            </a>
+            <a
+              href="/game?mode=demo"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-teal-300/25 bg-teal-300/10 px-5 text-sm font-semibold text-teal-100 transition hover:bg-teal-300/15"
+            >
+              <Play className="h-4 w-4" />
+              Play quick demo
             </a>
             <div className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-purple-300/25 bg-purple-300/10 px-5 text-sm font-semibold text-purple-100">
               <Sparkles className="h-4 w-4" />
-              {sampleGame.rooms.length} connected rooms
+              {sampleGame.rooms.length} rooms + {demoGame.rooms.length} demo
             </div>
           </div>
         </div>

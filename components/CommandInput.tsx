@@ -35,7 +35,7 @@ export function CommandInput({ disabled, onSubmit }: CommandInputProps) {
           value={command}
           onChange={(event) => setCommand(event.target.value)}
           disabled={disabled}
-          placeholder="inspect diagnostic screen, take calibration lens, answer signal..."
+          placeholder="inspect status wall, take admin badge, answer A17..."
           className="h-12 min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-900 px-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-300/60"
         />
         <button

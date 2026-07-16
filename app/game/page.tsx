@@ -20,14 +20,23 @@ import { useAdventureStore } from "@/state/adventureStore";
 export default function GamePage() {
   const game = useAdventureStore((state) => state.game);
   const resetGame = useAdventureStore((state) => state.resetGame);
+  const startSampleGame = useAdventureStore((state) => state.startSampleGame);
+  const startDemoGame = useAdventureStore((state) => state.startDemoGame);
   const submitCommand = useAdventureStore((state) => state.submitCommand);
   const requestCurrentHint = useAdventureStore((state) => state.requestCurrentHint);
   const [isBooting, setIsBooting] = useState(true);
 
   useEffect(() => {
+    const mode = new URLSearchParams(window.location.search).get("mode");
+    if (mode === "demo") {
+      startDemoGame();
+    } else if (mode === "sample") {
+      startSampleGame();
+    }
+
     const timeout = window.setTimeout(() => setIsBooting(false), 450);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [startDemoGame, startSampleGame]);
 
   const room = useMemo(() => getCurrentRoom(game), [game]);
   const inventory = useMemo(() => getInventory(game), [game]);
