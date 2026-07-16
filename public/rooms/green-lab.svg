@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-label="Green AI laboratory control room">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#10251c"/>
+      <stop offset="0.55" stop-color="#07111a"/>
+      <stop offset="1" stop-color="#02050a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="44%" cy="44%" r="45%">
+      <stop offset="0" stop-color="#6ee7b7" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#6ee7b7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <rect width="1200" height="720" fill="url(#glow)"/>
+  <g opacity="0.18" stroke="#d1fae5" stroke-width="1">
+    <path d="M0 120h1200M0 240h1200M0 360h1200M0 480h1200M0 600h1200"/>
+    <path d="M120 0v720M300 0v720M480 0v720M660 0v720M840 0v720M1020 0v720"/>
+  </g>
+  <g fill="#0b1f1c" stroke="#34d399" stroke-opacity="0.45" stroke-width="3">
+    <rect x="110" y="390" width="310" height="190" rx="12"/>
+    <rect x="455" y="330" width="300" height="250" rx="14"/>
+    <rect x="790" y="370" width="300" height="210" rx="12"/>
+  </g>
+  <g fill="#34d399">
+    <rect x="150" y="430" width="220" height="18" rx="9" opacity="0.8"/>
+    <rect x="150" y="470" width="150" height="12" rx="6" opacity="0.55"/>
+    <rect x="505" y="375" width="200" height="22" rx="11" opacity="0.9"/>
+    <rect x="505" y="425" width="130" height="14" rx="7" opacity="0.6"/>
+    <rect x="835" y="420" width="210" height="18" rx="9" opacity="0.7"/>
+  </g>
+  <path d="M0 650c170-60 310-45 480-20 215 32 410 42 720-44v134H0z" fill="#02050a" opacity="0.72"/>
+</svg>

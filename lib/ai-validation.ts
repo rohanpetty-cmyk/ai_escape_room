@@ -1,4 +1,5 @@
 import type { GameGenerationPromptInput } from "./prompts";
+import { gameStateSchema } from "./schemas";
 import type { GameState, Room } from "./types";
 
 export const AI_REQUEST_TIMEOUT_MS = 20_000;
@@ -37,6 +38,61 @@ export function temperatureForDifficulty(
   if (difficulty === "hard") return 0.5;
 
   return 0.35;
+}
+
+export type GameResponseValidationResult =
+  | {
+      ok: true;
+      game: GameState;
+    }
+  | {
+      ok: false;
+      code:
+        | "JSON_PARSE_FAILED"
+        | "SCHEMA_VALIDATION_FAILED"
+        | "GAME_INVARIANT_FAILED";
+      issues?: string[];
+    };
+
+export function validateGeneratedGameResponse(
+  rawText: string,
+  input: GameGenerationPromptInput,
+): GameResponseValidationResult {
+  const parsedJson = parseJson(stripMarkdownCodeFences(rawText));
+
+  if (!parsedJson.ok) {
+    return {
+      ok: false,
+      code: "JSON_PARSE_FAILED",
+    };
+  }
+
+  const parsedGame = gameStateSchema.safeParse(parsedJson.value);
+
+  if (!parsedGame.success) {
+    return {
+      ok: false,
+      code: "SCHEMA_VALIDATION_FAILED",
+      issues: parsedGame.error.issues.map(
+        (issue) => issue.path.join(".") || issue.message,
+      ),
+    };
+  }
+
+  const invariantIssues = validateGeneratedGame(parsedGame.data, input);
+
+  if (invariantIssues.length > 0) {
+    return {
+      ok: false,
+      code: "GAME_INVARIANT_FAILED",
+      issues: invariantIssues,
+    };
+  }
+
+  return {
+    ok: true,
+    game: parsedGame.data,
+  };
 }
 
 export function validateGeneratedGame(

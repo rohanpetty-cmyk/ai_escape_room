@@ -10,10 +10,11 @@ import { aiProviderSchema } from "@/lib/schemas";
 import { z } from "zod";
 
 const requestSchema = z.object({
-  theme: z.string().trim().min(3).max(120),
+  theme: z.string().trim().min(3).max(180),
   difficulty: z.enum(["easy", "medium", "hard"]),
   demoMode: z.boolean(),
   provider: aiProviderSchema.optional(),
+  sourceMaterial: z.string().trim().max(6_000).optional(),
 });
 
 export async function POST(request: Request) {

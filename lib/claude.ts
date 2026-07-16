@@ -5,11 +5,11 @@ import {
   parseJson,
   stripMarkdownCodeFences,
   temperatureForDifficulty,
-  validateGeneratedGame,
+  validateGeneratedGameResponse,
 } from "./ai-validation";
-import { gameStateSchema } from "./schemas";
 import { playerActionResultSchema } from "./schemas";
 import {
+  buildGameRepairPrompt,
   buildGameGenerationPrompt,
   buildDungeonMasterPrompt,
   DUNGEON_MASTER_SYSTEM_PROMPT,
@@ -114,25 +114,12 @@ export async function generateGameWithClaude(
   let rawText: string;
 
   try {
-    const message = await client.messages.create(
-      {
-        model,
-        max_tokens: input.demoMode ? 2_500 : 5_500,
-        temperature: temperatureForDifficulty(input.difficulty),
-        system: GAME_ARCHITECT_SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: buildGameGenerationPrompt(input),
-          },
-        ],
-      },
-      {
-        timeout: AI_REQUEST_TIMEOUT_MS,
-      },
+    rawText = await requestGameTextFromClaude(
+      client,
+      model,
+      buildGameGenerationPrompt(input),
+      input,
     );
-
-    rawText = extractTextContent(message.content);
   } catch {
     return generationFailure(
       "CLAUDE_REQUEST_FAILED",
@@ -141,52 +128,31 @@ export async function generateGameWithClaude(
     );
   }
 
-  if (!rawText.trim()) {
-    return generationFailure(
-      "EMPTY_RESPONSE",
-      "Claude returned an empty response. Using the static fallback game.",
-      model,
-    );
+  const firstValidation = validateClaudeGameResponse(rawText, input, model);
+  if (firstValidation.ok) {
+    return firstValidation;
   }
 
-  const jsonText = stripMarkdownCodeFences(rawText);
-  const parsedJson = parseJson(jsonText);
+  let repairedText: string;
 
-  if (!parsedJson.ok) {
-    return generationFailure(
-      "JSON_PARSE_FAILED",
-      "Claude returned text that could not be parsed as JSON. Using the static fallback game.",
+  try {
+    repairedText = await requestGameTextFromClaude(
+      client,
       model,
+      buildGameRepairPrompt({
+        ...input,
+        invalidJson: rawText,
+        issues: firstValidation.issues ?? [firstValidation.message],
+      }),
+      input,
     );
+  } catch {
+    return firstValidation;
   }
 
-  const parsedGame = gameStateSchema.safeParse(parsedJson.value);
+  const repairedValidation = validateClaudeGameResponse(repairedText, input, model);
 
-  if (!parsedGame.success) {
-    return generationFailure(
-      "SCHEMA_VALIDATION_FAILED",
-      "Claude returned JSON that did not match the GameState schema. Using the static fallback game.",
-      model,
-      parsedGame.error.issues.map((issue) => issue.path.join(".") || issue.message),
-    );
-  }
-
-  const invariantIssues = validateGeneratedGame(parsedGame.data, input);
-
-  if (invariantIssues.length > 0) {
-    return generationFailure(
-      "GAME_INVARIANT_FAILED",
-      "Claude returned a game that failed gameplay validation. Using the static fallback game.",
-      model,
-      invariantIssues,
-    );
-  }
-
-  return {
-    ok: true,
-    game: parsedGame.data,
-    model,
-  };
+  return repairedValidation;
 }
 
 export async function processPlayerActionWithClaude(
@@ -274,6 +240,81 @@ export async function processPlayerActionWithClaude(
     result: parsedAction.data,
     model,
   };
+}
+
+function validateClaudeGameResponse(
+  rawText: string,
+  input: GameGenerationPromptInput,
+  model: string,
+): ClaudeGenerationResult {
+  if (!rawText.trim()) {
+    return generationFailure(
+      "EMPTY_RESPONSE",
+      "Claude returned an empty response. Using the static fallback game.",
+      model,
+    );
+  }
+
+  const validation = validateGeneratedGameResponse(rawText, input);
+
+  if (validation.ok) {
+    return {
+      ok: true,
+      game: validation.game,
+      model,
+    };
+  }
+
+  if (validation.code === "JSON_PARSE_FAILED") {
+    return generationFailure(
+      "JSON_PARSE_FAILED",
+      "Claude returned text that could not be parsed as JSON. Using the static fallback game.",
+      model,
+    );
+  }
+
+  if (validation.code === "SCHEMA_VALIDATION_FAILED") {
+    return generationFailure(
+      "SCHEMA_VALIDATION_FAILED",
+      "Claude returned JSON that did not match the GameState schema. Using the static fallback game.",
+      model,
+      validation.issues,
+    );
+  }
+
+  return generationFailure(
+    "GAME_INVARIANT_FAILED",
+    "Claude returned a game that failed gameplay validation. Using the static fallback game.",
+    model,
+    validation.issues,
+  );
+}
+
+async function requestGameTextFromClaude(
+  client: Anthropic,
+  model: string,
+  prompt: string,
+  input: GameGenerationPromptInput,
+): Promise<string> {
+  const message = await client.messages.create(
+    {
+      model,
+      max_tokens: input.demoMode ? 2_500 : 5_500,
+      temperature: temperatureForDifficulty(input.difficulty),
+      system: GAME_ARCHITECT_SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    },
+    {
+      timeout: AI_REQUEST_TIMEOUT_MS,
+    },
+  );
+
+  return extractTextContent(message.content);
 }
 
 function getClaudeModel() {

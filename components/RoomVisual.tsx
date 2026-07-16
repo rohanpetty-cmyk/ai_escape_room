@@ -10,14 +10,25 @@ const toneClassByRoomTone: Record<Room["visualTheme"], string> = {
   purple: "from-purple-400/30 via-fuchsia-300/10 to-slate-950",
 };
 
+const imageByRoomTone: Record<Room["visualTheme"], string> = {
+  green: "/rooms/green-lab.svg",
+  teal: "/rooms/teal-server.svg",
+  purple: "/rooms/purple-exit.svg",
+};
+
 export function RoomVisual({ room }: RoomVisualProps) {
   return (
     <section className="relative min-h-[320px] overflow-hidden rounded-lg border border-white/10 bg-slate-950 shadow-2xl shadow-black/30">
       <div
-        className={`absolute inset-0 bg-gradient-to-br ${toneClassByRoomTone[room.visualTheme]}`}
+        aria-hidden="true"
+        className="absolute inset-0 bg-cover bg-center opacity-80"
+        style={{ backgroundImage: `url(${imageByRoomTone[room.visualTheme]})` }}
       />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:44px_44px] opacity-25" />
-      <div className="absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 bg-white/5 shadow-[0_0_90px_rgba(45,212,191,0.18)]" />
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${toneClassByRoomTone[room.visualTheme]} mix-blend-screen`}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:44px_44px] opacity-20" />
       <div className="relative flex min-h-[320px] flex-col justify-end p-6">
         <p className="text-sm uppercase tracking-[0.22em] text-emerald-100">
           {room.visualTheme} sector

@@ -6,6 +6,12 @@ export interface GameGenerationPromptInput {
   theme: string;
   difficulty: GameDifficulty;
   demoMode: boolean;
+  sourceMaterial?: string;
+}
+
+export interface GameRepairPromptInput extends GameGenerationPromptInput {
+  invalidJson: string;
+  issues: string[];
 }
 
 export interface DungeonMasterPromptInput {
@@ -91,11 +97,25 @@ export function buildGameGenerationPrompt({
   theme,
   difficulty,
   demoMode,
+  sourceMaterial,
 }: GameGenerationPromptInput): string {
   const roomCount = demoMode ? 1 : 3;
   const modeInstruction = demoMode
     ? "Create exactly one room. The room must be completable in under two minutes."
     : "Create exactly three connected rooms. The full adventure must be completable in five to seven minutes.";
+  const educationalInstruction = sourceMaterial?.trim()
+    ? [
+        "",
+        "Educational source material:",
+        sourceMaterial.trim(),
+        "",
+        "Educational mode requirements:",
+        "- Use the source material as the factual basis for clues and puzzle knowledge.",
+        "- Every puzzle should reinforce one concrete idea from the source material.",
+        "- Do not require knowledge beyond the source material and visible room clues.",
+        "- Keep clue wording concise; paraphrase the source instead of dumping large passages.",
+      ].join("\n")
+    : "";
 
   return [
     `Theme: ${theme}`,
@@ -134,7 +154,7 @@ export function buildGameGenerationPrompt({
         "prompt": "the puzzle prompt",
         "solution": "answer",
         "acceptedAnswers": ["answer", "alternative answer"],
-        "clueIds": ["clue-id"],
+        "clueIds": ["clue-id-one", "clue-id-two"],
         "hintLevels": ["gentle hint", "stronger hint", "near-solution hint"],
         "solved": false,
         "successMessage": "what happens when solved"
@@ -152,9 +172,14 @@ export function buildGameGenerationPrompt({
       "completed": false,
       "clues": [
         {
-          "id": "url-safe-clue-id",
+          "id": "clue-id-one",
           "title": "Clue Title",
           "content": "clue content"
+        },
+        {
+          "id": "clue-id-two",
+          "title": "Second Clue Title",
+          "content": "second clue content"
         }
       ]
     }
@@ -183,8 +208,12 @@ export function buildGameGenerationPrompt({
   "demoMode": ${demoMode ? "true" : "false"}
 }`,
     "",
+    educationalInstruction,
+    "",
     "Hard requirements:",
     `- rooms.length must be exactly ${roomCount}.`,
+    "- Every room must define at least two clues.",
+    "- Every puzzle.clueIds array must contain at least two clue IDs from that same room.",
     "- Every puzzle.hintLevels array must contain exactly three hints.",
     "- Every puzzle.clueIds entry must refer to a clue in the same room.",
     "- Every object.discoveredClueIds entry must refer to a clue in the same room.",
@@ -195,6 +224,43 @@ export function buildGameGenerationPrompt({
     "- In demo mode, include at least one inspectable clue path and one final exit.",
     "- Keep all mutable progress fields in their initial state: empty inventory, empty discoveredClueIds, empty solvedPuzzleIds, empty hintsUsed, puzzle.solved false, room.completed false, objectives.completed false.",
     "- Return valid JSON only.",
+  ].join("\n");
+}
+
+export function buildGameRepairPrompt({
+  theme,
+  difficulty,
+  demoMode,
+  sourceMaterial,
+  invalidJson,
+  issues,
+}: GameRepairPromptInput): string {
+  return [
+    "Repair the generated escape-room JSON so it passes validation.",
+    "Return one corrected JSON object only. Do not add markdown or explanation.",
+    "",
+    "Original request:",
+    `Theme: ${theme}`,
+    `Difficulty: ${difficulty}`,
+    `Demo mode: ${demoMode ? "true" : "false"}`,
+    sourceMaterial?.trim()
+      ? `Educational source material:\n${sourceMaterial.trim()}`
+      : "Educational source material: none",
+    "",
+    "Validation issues to fix:",
+    ...issues.map((issue) => `- ${issue}`),
+    "",
+    "Critical invariants:",
+    `- rooms.length must be exactly ${demoMode ? 1 : 3}.`,
+    "- Every room must have exactly one puzzle.",
+    "- Every puzzle.clueIds array must contain at least two clue IDs from the same room.",
+    "- Every puzzle.hintLevels array must contain exactly three hints.",
+    "- Every referenced clue, puzzle, room, objective, item, and exit ID must exist.",
+    "- IDs must be unique, lowercase, URL-safe slugs.",
+    "- Keep mutable progress fields in their initial state.",
+    "",
+    "Invalid JSON to repair:",
+    invalidJson,
   ].join("\n");
 }
 

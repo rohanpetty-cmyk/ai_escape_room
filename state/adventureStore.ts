@@ -22,6 +22,7 @@ interface AdventureStore {
   game: GameState;
   lastResult?: PlayerActionResult;
   setAIProvider: (provider: AIProvider) => void;
+  startGeneratedGame: (game: GameState) => void;
   startSampleGame: () => void;
   startDemoGame: () => void;
   resetGame: () => void;
@@ -42,6 +43,11 @@ export const useAdventureStore = create<AdventureStore>()(
       game: createInitialGame(sampleGame),
       lastResult: undefined,
       setAIProvider: (provider) => set({ aiProvider: provider }),
+      startGeneratedGame: (game) =>
+        set({
+          game: createInitialGame(game),
+          lastResult: undefined,
+        }),
       startSampleGame: () =>
         set({
           game: createInitialGame(sampleGame),
