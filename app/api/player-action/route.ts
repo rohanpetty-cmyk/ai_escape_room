@@ -29,14 +29,10 @@ import type {
 } from "@/lib/types";
 
 type SanitizedActionResult =
-  | {
-      ok: true;
-      result: PlayerActionResult;
-    }
-  | {
-      ok: false;
-      issues: string[];
-    };
+  {
+    result: PlayerActionResult;
+    issues: string[];
+  };
 
 const MODEL_RESPONSE_ERROR_STATUS = 502;
 
@@ -98,18 +94,37 @@ export async function POST(request: Request) {
     providerResult.result,
   );
 
-  if (!sanitized.ok) {
+  if (sanitized.issues.length > 0) {
+    const fallbackResult = runCommand(gameState, action);
+
+    if (fallbackResult.valid) {
+      return NextResponse.json({
+        source: "deterministic-fallback",
+        provider: providerResult.provider,
+        result: fallbackResult,
+        gameState: applyActionResult(gameState, fallbackResult),
+        warning: {
+          code: "MODEL_RESPONSE_SANITIZED",
+          message:
+            "The selected AI provider proposed unavailable or unsafe state changes, so deterministic local handling was used.",
+        },
+      });
+    }
+  }
+
+  if (sanitized.result.effects.length <= 2 && sanitized.issues.length > 0) {
     return NextResponse.json(
       {
-        error: {
-          code: "MODEL_RESPONSE_REJECTED",
+        source: providerResult.provider,
+        provider: providerResult.provider,
+        result: sanitized.result,
+        gameState: applyActionResult(gameState, sanitized.result),
+        warning: {
+          code: "MODEL_RESPONSE_SANITIZED",
           message:
-            "The selected AI provider returned an action response that referenced unavailable game IDs or unsafe effects. The current game state was preserved.",
-          issues: sanitized.issues.slice(0, 8),
+            "The selected AI provider proposed unavailable or unsafe state changes, so those state changes were ignored.",
         },
-        gameState,
       },
-      { status: MODEL_RESPONSE_ERROR_STATUS },
     );
   }
 
@@ -118,6 +133,15 @@ export async function POST(request: Request) {
     provider: providerResult.provider,
     result: sanitized.result,
     gameState: applyActionResult(gameState, sanitized.result),
+    ...(sanitized.issues.length > 0
+      ? {
+          warning: {
+            code: "MODEL_RESPONSE_SANITIZED",
+            message:
+              "The selected AI provider proposed unavailable or unsafe state changes, so those state changes were ignored.",
+          },
+        }
+      : {}),
   });
 }
 
@@ -194,7 +218,7 @@ function buildDungeonMasterContext(
   };
 }
 
-function sanitizeActionResult(
+export function sanitizeActionResult(
   gameState: GameState,
   action: string,
   context: DungeonMasterPromptInput,
@@ -202,6 +226,8 @@ function sanitizeActionResult(
 ): SanitizedActionResult {
   const issues: string[] = [];
   const allowedIds = getAllowedContextIds(context);
+  const sanitizedTargetId =
+    result.targetId && allowedIds.has(result.targetId) ? result.targetId : null;
 
   if (result.targetId && !allowedIds.has(result.targetId)) {
     issues.push(`targetId is not in the supplied context: ${result.targetId}.`);
@@ -211,7 +237,8 @@ function sanitizeActionResult(
     issues.push("Invalid actions must not include state-changing effects.");
   }
 
-  const canonicalEffects = result.effects.flatMap((effect) => {
+  const candidateEffects = result.valid ? result.effects : [];
+  const canonicalEffects = candidateEffects.flatMap((effect) => {
     const sanitized = sanitizeEffect(gameState, action, context, effect);
 
     if (!sanitized.ok) {
@@ -222,21 +249,13 @@ function sanitizeActionResult(
     return sanitized.effect ? [sanitized.effect] : [];
   });
 
-  if (issues.length > 0) {
-    return {
-      ok: false,
-      issues,
-    };
-  }
-
   const validatedEffects = getEngineValidatedEffects(gameState, canonicalEffects);
   const effectsWithObjectives = addObjectiveEffects(gameState, validatedEffects);
 
   return {
-    ok: true,
     result: {
       intent: result.intent,
-      targetId: result.targetId,
+      targetId: sanitizedTargetId,
       valid: result.valid,
       narration: result.narration,
       effects: [
@@ -245,6 +264,7 @@ function sanitizeActionResult(
         makeNarrativeEffect("assistant", result.narration),
       ],
     },
+    issues,
   };
 }
 
@@ -266,9 +286,9 @@ function sanitizeEffect(
 
   switch (effect.type) {
     case "ADD_NARRATIVE":
-      return rejectedEffect("Claude may not create narrative effects.");
+      return rejectedEffect("AI provider may not create narrative effects.");
     case "COMPLETE_OBJECTIVE":
-      return rejectedEffect("Claude may not complete objectives directly.");
+      return rejectedEffect("AI provider may not complete objectives directly.");
     case "ADD_INVENTORY": {
       const object = getVisibleObjects(room).find(
         (candidate) => candidate.collectibleItemId === effect.item.id,
